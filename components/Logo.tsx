@@ -10,7 +10,7 @@ type Props = {
   className?: string;
 };
 
-export function Logo({ height = 28, variant = "light", className = "" }: Props) {
+export function Logo({ height = 28, variant = "original", className = "" }: Props) {
   const ratio = brand.logo.width / brand.logo.height;
   const width = Math.round(height * ratio);
   return (

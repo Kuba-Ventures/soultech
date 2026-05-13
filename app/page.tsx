@@ -19,18 +19,18 @@ export default function Page() {
 
 function Header() {
   return (
-    <header className="sticky top-0 z-30 backdrop-blur-md bg-ink/70 hairline-b">
-      <div className="mx-auto max-w-6xl px-6 h-14 flex items-center justify-between">
-        <Link href="#" className="flex items-center gap-2">
-          <Logo height={22} />
+    <header className="sticky top-0 z-30 bg-white border-b border-black/10">
+      <div className="mx-auto max-w-6xl px-6 h-24 sm:h-28 flex items-center justify-between gap-6">
+        <Link href="#" className="flex items-center gap-2 shrink-0">
+          <Logo height={56} />
           <span className="sr-only">{brand.name}</span>
         </Link>
-        <nav className="flex items-center gap-6 text-sm text-white/70">
-          <a href="#how" className="hover:text-white transition">How it works</a>
-          <a href="#cases" className="hover:text-white transition hidden sm:inline">Use cases</a>
+        <nav className="flex items-center gap-5 sm:gap-7 text-sm text-neutral-700">
+          <a href="#how" className="hover:text-black transition">How it works</a>
+          <a href="#cases" className="hover:text-black transition hidden sm:inline">Use cases</a>
           <a
             href="#waitlist"
-            className="rounded-full bg-white text-black px-3.5 py-1.5 text-sm font-medium hover:bg-white/90 transition"
+            className="rounded-full bg-black text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800 transition"
           >
             Join waitlist
           </a>
@@ -221,9 +221,10 @@ function Footer() {
   return (
     <footer className="py-12">
       <div className="mx-auto max-w-6xl px-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 text-sm text-white/50">
-        <div className="flex items-center gap-3">
-          <Logo height={18} />
-          <span className="text-white/30">·</span>
+        <div className="flex items-center gap-4">
+          <div className="rounded-md bg-white px-2.5 py-1.5">
+            <Logo height={20} />
+          </div>
           <span>© {brand.year} {brand.name}. All rights reserved.</span>
         </div>
         <a
