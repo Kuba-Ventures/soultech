@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: #0a0a0b;
+  color: #ededee;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Subtle radial glow used in hero */
+.bg-glow {
+  background:
+    radial-gradient(60% 50% at 50% 0%, rgba(120, 119, 198, 0.18) 0%, rgba(10, 10, 11, 0) 60%),
+    radial-gradient(40% 30% at 80% 10%, rgba(56, 189, 248, 0.12) 0%, rgba(10, 10, 11, 0) 60%),
+    radial-gradient(40% 30% at 10% 20%, rgba(244, 114, 182, 0.10) 0%, rgba(10, 10, 11, 0) 60%);
+}
+
+/* Hairline border helper */
+.hairline {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.hairline-b {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}

@@ -1,0 +1,30 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# next
+/.next/
+/out/
+next-env.d.ts
+
+# build
+/build
+/dist
+
+# misc
+.DS_Store
+*.pem
+
+# env
+.env*.local
+.env
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+
+# runtime data (waitlist submissions — demo only, not for prod)
+/data/waitlist.json
