@@ -1,42 +1,16 @@
 import Link from "next/link";
-import { brand } from "@/lib/brand";
 import { ChatMockup } from "@/components/ChatMockup";
 import { WaitlistForm } from "@/components/WaitlistForm";
-import { Logo } from "@/components/Logo";
+import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
 
 export default function Page() {
   return (
     <main className="relative">
-      <Header />
+      <SiteHeader />
       <Hero />
-      <HowItWorks />
-      <UseCases />
       <Waitlist />
-      <Footer />
+      <SiteFooter />
     </main>
-  );
-}
-
-function Header() {
-  return (
-    <header className="sticky top-0 z-30 bg-white border-b border-black/10">
-      <div className="mx-auto max-w-6xl px-6 h-24 sm:h-28 flex items-center justify-between gap-6">
-        <Link href="#" className="flex items-center gap-2 shrink-0">
-          <Logo height={56} />
-          <span className="sr-only">{brand.name}</span>
-        </Link>
-        <nav className="flex items-center gap-5 sm:gap-7 text-sm text-neutral-700">
-          <a href="#how" className="hover:text-black transition">How it works</a>
-          <a href="#cases" className="hover:text-black transition hidden sm:inline">Use cases</a>
-          <a
-            href="#waitlist"
-            className="rounded-full bg-black text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800 transition"
-          >
-            Join waitlist
-          </a>
-        </nav>
-      </div>
-    </header>
   );
 }
 
@@ -73,122 +47,17 @@ function Hero() {
                 <path d="M5 12h14M13 5l7 7-7 7" />
               </svg>
             </a>
-            <a
-              href="#how"
+            <Link
+              href="/how-it-works"
               className="inline-flex items-center justify-center rounded-full hairline text-white/80 px-5 py-3 text-sm hover:text-white hover:border-white/20 transition"
             >
               See how it works
-            </a>
+            </Link>
           </div>
         </div>
 
         <div className="lg:pl-8 animate-fade-up [animation-delay:120ms]">
           <ChatMockup />
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function HowItWorks() {
-  const steps = [
-    {
-      n: "01",
-      title: "Record",
-      body: "Quick voice conversations train your AI on how you think — your metaphors, your pacing, the analogies that click.",
-      icon: MicIcon,
-    },
-    {
-      n: "02",
-      title: "Connect",
-      body: "Optionally link email, calendar, and social for deeper context. Your data stays yours — nothing leaves without permission.",
-      icon: LinkIcon,
-    },
-    {
-      n: "03",
-      title: "Learn",
-      body: "Ask anything. Answers arrive in your own cognitive style — not a generic one, not a watered-down one.",
-      icon: SparkIcon,
-    },
-  ];
-
-  return (
-    <section id="how" className="hairline-b">
-      <div className="mx-auto max-w-6xl px-6 py-24 sm:py-28">
-        <div className="max-w-2xl">
-          <div className="text-xs uppercase tracking-[0.18em] text-white/40">How it works</div>
-          <h2 className="mt-3 text-3xl sm:text-4xl font-medium tracking-[-0.02em]">
-            Three steps to a partner that thinks with you.
-          </h2>
-        </div>
-
-        <div className="mt-12 grid md:grid-cols-3 gap-6">
-          {steps.map(({ n, title, body, icon: Icon }) => (
-            <div
-              key={n}
-              className="group relative rounded-2xl hairline bg-white/[0.02] p-6 hover:bg-white/[0.04] transition"
-            >
-              <div className="flex items-center justify-between">
-                <div className="h-10 w-10 rounded-xl hairline flex items-center justify-center text-white/80">
-                  <Icon />
-                </div>
-                <span className="text-xs font-mono text-white/30">{n}</span>
-              </div>
-              <div className="mt-6 text-lg font-medium">{title}</div>
-              <p className="mt-2 text-white/60 leading-relaxed">{body}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function UseCases() {
-  const cases = [
-    {
-      title: "Get up to speed on a new topic, fast.",
-      body: "Instead of grinding through a textbook, walk through it with an AI that already knows how you think.",
-    },
-    {
-      title: "Work through a problem in your own voice.",
-      body: "Talk it out. Your AI mirrors how you reason, surfaces what you&rsquo;re missing, and helps you converge.",
-    },
-    {
-      title: "Turn passive learning into accelerated growth.",
-      body: "Convert podcasts, papers, and meetings into compounding personal knowledge — phrased the way you&rsquo;d phrase it.",
-    },
-  ];
-
-  return (
-    <section id="cases" className="hairline-b">
-      <div className="mx-auto max-w-6xl px-6 py-24 sm:py-28">
-        <div className="max-w-2xl">
-          <div className="text-xs uppercase tracking-[0.18em] text-white/40">What it&rsquo;s for</div>
-          <h2 className="mt-3 text-3xl sm:text-4xl font-medium tracking-[-0.02em]">
-            Built for the moments generic AI falls short.
-          </h2>
-        </div>
-
-        <div className="mt-12 grid md:grid-cols-3 gap-6">
-          {cases.map((c, i) => (
-            <article
-              key={c.title}
-              className="relative rounded-2xl hairline bg-gradient-to-b from-white/[0.04] to-transparent p-6 hover:from-white/[0.06] transition"
-            >
-              <div className="text-xs font-mono text-white/30">
-                {String(i + 1).padStart(2, "0")}
-              </div>
-              <h3
-                className="mt-3 text-xl font-medium tracking-tight leading-snug"
-                dangerouslySetInnerHTML={{ __html: c.title }}
-              />
-              <p
-                className="mt-3 text-white/60 leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: c.body }}
-              />
-            </article>
-          ))}
         </div>
       </div>
     </section>
@@ -214,54 +83,5 @@ function Waitlist() {
         </div>
       </div>
     </section>
-  );
-}
-
-function Footer() {
-  return (
-    <footer className="py-12">
-      <div className="mx-auto max-w-6xl px-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 text-sm text-white/50">
-        <div className="flex items-center gap-4">
-          <div className="rounded-md bg-white px-2.5 py-1.5">
-            <Logo height={20} />
-          </div>
-          <span>© {brand.year} {brand.name}. All rights reserved.</span>
-        </div>
-        <a
-          href={`mailto:${brand.contactEmail}`}
-          className="hover:text-white transition"
-        >
-          {brand.contactEmail}
-        </a>
-      </div>
-    </footer>
-  );
-}
-
-/* --- Inline icons (no library) ----------------------------------------- */
-
-function MicIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <rect x="9" y="3" width="6" height="12" rx="3" />
-      <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
-    </svg>
-  );
-}
-
-function LinkIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M10 14a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5" />
-      <path d="M14 10a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5" />
-    </svg>
-  );
-}
-
-function SparkIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8" />
-    </svg>
   );
 }
