@@ -44,12 +44,20 @@ export function SiteFooter() {
             © {brand.year} {brand.name}. All rights reserved.
           </span>
         </div>
-        <a
-          href={`mailto:${brand.contactEmail}`}
-          className="hover:text-white transition"
-        >
-          {brand.contactEmail}
-        </a>
+        <div className="flex items-center gap-5">
+          <Link
+            href="/admin/login"
+            className="text-white/35 hover:text-white/70 transition"
+          >
+            Member log-in
+          </Link>
+          <a
+            href={`mailto:${brand.contactEmail}`}
+            className="hover:text-white transition"
+          >
+            {brand.contactEmail}
+          </a>
+        </div>
       </div>
     </footer>
   );
