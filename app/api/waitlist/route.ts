@@ -1,15 +1,4 @@
 import { NextResponse } from "next/server";
-import { promises as fs } from "fs";
-import path from "path";
-
-// Demo backend: append submissions to /data/waitlist.json.
-// NOTE: Vercel's filesystem is ephemeral, writes don't persist across
-// invocations. This is fine for an internal demo. For a real launch swap to:
-//   - Resend (email notifications)
-//   - Formspree (zero-backend form)
-//   - Supabase / Convex / Postgres (durable storage)
-//   - Loops / ConvertKit (waitlist platforms)
-// Look for `TODO: backend swap` markers to find the integration point.
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -19,24 +8,8 @@ type Submission = {
   email: string;
   useCase: string;
   ts: string;
+  source: string;
 };
-
-const DATA_DIR = path.join(process.cwd(), "data");
-const FILE = path.join(DATA_DIR, "waitlist.json");
-
-async function readAll(): Promise<Submission[]> {
-  try {
-    const raw = await fs.readFile(FILE, "utf8");
-    return JSON.parse(raw);
-  } catch {
-    return [];
-  }
-}
-
-async function writeAll(rows: Submission[]) {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-  await fs.writeFile(FILE, JSON.stringify(rows, null, 2), "utf8");
-}
 
 export async function POST(req: Request) {
   let body: Partial<Submission>;
@@ -68,21 +41,31 @@ export async function POST(req: Request) {
     email,
     useCase,
     ts: new Date().toISOString(),
+    source: "landing-page",
   };
 
-  // TODO: backend swap. Replace this block with a Resend / Supabase / etc. call.
+  const webhook = process.env.WAITLIST_WEBHOOK_URL;
+  if (!webhook) {
+    console.warn("[waitlist] WAITLIST_WEBHOOK_URL not set; logging instead:", entry);
+    return NextResponse.json({ ok: true });
+  }
+
   try {
-    const rows = await readAll();
-    rows.push(entry);
-    await writeAll(rows);
+    const res = await fetch(webhook, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(entry),
+      redirect: "follow",
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      console.error("[waitlist] webhook non-2xx:", res.status, text.slice(0, 300));
+    }
   } catch (err) {
-    // On Vercel the filesystem is read-only outside /tmp, log and succeed
-    // so the user still sees the success state during the demo.
-    console.warn(
-      "[waitlist] could not persist to disk (expected on Vercel):",
+    console.error(
+      "[waitlist] webhook fetch failed:",
       err instanceof Error ? err.message : err,
     );
-    console.log("[waitlist] submission:", entry);
   }
 
   return NextResponse.json({ ok: true });
