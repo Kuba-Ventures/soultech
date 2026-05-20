@@ -65,11 +65,7 @@ export function ComingSoon({ eyebrow, title, body }: ComingSoonProps) {
   return (
     <section className="bg-glow">
       <div className="mx-auto max-w-3xl px-6 py-32 sm:py-40 text-center">
-        <div className="inline-flex items-center gap-2 rounded-full hairline px-3 py-1 text-xs text-white/60">
-          <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse-soft" />
-          Coming soon
-        </div>
-        <div className="mt-6 text-xs uppercase tracking-[0.18em] text-white/40">
+        <div className="text-xs uppercase tracking-[0.18em] text-white/40">
           {eyebrow}
         </div>
         <h1 className="mt-3 text-4xl sm:text-5xl font-medium tracking-[-0.02em] leading-[1.05]">

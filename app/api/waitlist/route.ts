@@ -3,7 +3,7 @@ import { promises as fs } from "fs";
 import path from "path";
 
 // Demo backend: append submissions to /data/waitlist.json.
-// NOTE: Vercel's filesystem is ephemeral — writes don't persist across
+// NOTE: Vercel's filesystem is ephemeral, writes don't persist across
 // invocations. This is fine for an internal demo. For a real launch swap to:
 //   - Resend (email notifications)
 //   - Formspree (zero-backend form)
@@ -70,13 +70,13 @@ export async function POST(req: Request) {
     ts: new Date().toISOString(),
   };
 
-  // TODO: backend swap — replace this block with a Resend / Supabase / etc. call.
+  // TODO: backend swap. Replace this block with a Resend / Supabase / etc. call.
   try {
     const rows = await readAll();
     rows.push(entry);
     await writeAll(rows);
   } catch (err) {
-    // On Vercel the filesystem is read-only outside /tmp — log and succeed
+    // On Vercel the filesystem is read-only outside /tmp, log and succeed
     // so the user still sees the success state during the demo.
     console.warn(
       "[waitlist] could not persist to disk (expected on Vercel):",

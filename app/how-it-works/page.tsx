@@ -4,7 +4,7 @@ import { brand } from "@/lib/brand";
 import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
 
 export const metadata: Metadata = {
-  title: `How it works — ${brand.name}`,
+  title: `How it works: ${brand.name}`,
   description: `How ${brand.shortName} learns the way you think.`,
 };
 
@@ -59,7 +59,7 @@ const steps: Step[] = [
     index: "02",
     title: "Connect what helps (optional)",
     body:
-      "Plug in your calendar, docs, notes, or email if you want richer context. Connections are explicit and revocable. Your data stays encrypted and under your control — nothing leaves your account unless you say so.",
+      "Plug in your calendar, docs, notes, or email if you want richer context. Connections are explicit and revocable. Your data stays encrypted and under your control. Nothing leaves your account unless you say so.",
     icon: <NodesIcon />,
   },
   {

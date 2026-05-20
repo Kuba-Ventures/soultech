@@ -19,12 +19,7 @@ function Hero() {
     <section className="relative bg-glow">
       <div className="mx-auto max-w-6xl px-6 pt-20 pb-24 sm:pt-28 sm:pb-32 grid lg:grid-cols-2 gap-14 items-center">
         <div className="animate-fade-up">
-          <div className="inline-flex items-center gap-2 rounded-full hairline px-3 py-1 text-xs text-white/60">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse-soft" />
-            Private beta — Spring 2026
-          </div>
-
-          <h1 className="mt-6 text-5xl sm:text-6xl lg:text-7xl font-medium tracking-[-0.03em] leading-[0.98]">
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-medium tracking-[-0.03em] leading-[0.98]">
             An AI that learns
             <br />
             <span className="bg-gradient-to-r from-white via-white to-white/60 bg-clip-text text-transparent">
@@ -34,7 +29,7 @@ function Hero() {
 
           <p className="mt-6 max-w-xl text-lg text-white/65 leading-relaxed">
             Train a personal AI on your voice, your thinking, your style.
-            Get unstuck faster — in a way that actually makes sense to you.
+            Get unstuck faster, in a way that actually makes sense to you.
           </p>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">

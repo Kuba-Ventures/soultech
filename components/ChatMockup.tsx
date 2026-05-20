@@ -1,6 +1,6 @@
 import { brand } from "@/lib/brand";
 
-// Pure CSS, no JS — static mockup of the AI in conversation.
+// Pure CSS, no JS. Static mockup of the AI in conversation.
 export function ChatMockup() {
   return (
     <div className="relative w-full max-w-md mx-auto">
@@ -25,11 +25,11 @@ export function ChatMockup() {
           <div className="flex justify-start">
             <div className="max-w-[88%] rounded-2xl rounded-bl-sm bg-gradient-to-br from-indigo-500/15 to-fuchsia-500/10 hairline px-4 py-3 text-white/85">
               <p className="text-[11px] uppercase tracking-wider text-white/40 mb-2">
-                In your style — analogy first
+                In your style: analogy first
               </p>
               <p>
                 Picture a writers&rsquo; room where every editor reads the
-                same page at once, each looking for a different pattern —
+                same page at once, each looking for a different pattern:
                 rhyme, character arc, callbacks…
                 <span className="inline-block w-1.5 h-4 align-[-2px] ml-0.5 bg-white/70 animate-type-cursor" />
               </p>

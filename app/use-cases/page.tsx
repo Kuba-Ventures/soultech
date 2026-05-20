@@ -5,7 +5,7 @@ import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
 import { ExchangeCard } from "@/components/ExchangeCard";
 
 export const metadata: Metadata = {
-  title: `Use cases — ${brand.name}`,
+  title: `Use cases: ${brand.name}`,
   description: `Ways people are using ${brand.shortName} to learn and think.`,
 };
 
@@ -23,8 +23,8 @@ const useCases: UseCase[] = [
     title: "Learning a new field fast",
     bestFor: "Researcher",
     problem: "I'm three papers deep into a field that isn't mine, and I keep losing the thread.",
-    prompt: "What's actually going on with mechanistic interpretability — the core idea, not the jargon?",
-    styleLabel: "In your style — analogy first",
+    prompt: "What's actually going on with mechanistic interpretability, the core idea, not the jargon?",
+    styleLabel: "In your style: analogy first",
     response:
       "Think of a neural net the way you think of a city you've only seen on a map. Interpretability is the work of walking the streets, checking which buildings actually do what the labels claim. Once you've walked enough blocks, the map starts meaning something.",
   },
@@ -33,7 +33,7 @@ const useCases: UseCase[] = [
     bestFor: "Founder",
     problem: "I've been chewing on this for two days and I keep arguing both sides in my head.",
     prompt: "I think I need to let go of my first engineer. Help me think through it.",
-    styleLabel: "In your style — the question under the question",
+    styleLabel: "In your style: the question under the question",
     response:
       "You usually don't ask 'should I do this.' You ask 'what am I avoiding by asking.' What's the version of this where you've already made the call, and you're just looking for permission to feel okay about it?",
   },
@@ -42,16 +42,16 @@ const useCases: UseCase[] = [
     bestFor: "Writer or maker",
     problem: "The shape of the thing is clear in my head and dead on the page.",
     prompt: "The middle of this essay is sagging. I don't know what's missing.",
-    styleLabel: "In your style — diagnose before prescribing",
+    styleLabel: "In your style: diagnose before prescribing",
     response:
-      "When your middles sag, it's almost always because the opening question already got answered and the reader knows it. You haven't given them a new tension yet. What's the second question this essay opens — the one you haven't asked out loud?",
+      "When your middles sag, it's almost always because the opening question already got answered and the reader knows it. You haven't given them a new tension yet. What's the second question this essay opens, the one you haven't asked out loud?",
   },
   {
     title: "Noticing patterns in your own thinking",
     bestFor: "Lifelong learner",
     problem: "I want to know what I actually believe, not what I said in passing on a Tuesday.",
     prompt: "Where have I quietly changed my mind in the last six months?",
-    styleLabel: "In your style — surface the shifts you didn't announce",
+    styleLabel: "In your style: surface the shifts you didn't announce",
     response:
       "Twice in March you described risk as 'optionality.' By April you stopped. You started calling it 'exposure.' That's not a vocabulary change. That's you deciding the downside matters more than you used to admit.",
   },
@@ -60,7 +60,7 @@ const useCases: UseCase[] = [
     bestFor: "New hire or career switcher",
     problem: "Everyone's speaking shorthand. I'm nodding along and falling a little further behind each day.",
     prompt: "Why do people on this team keep saying 'we need to raise the bar on rigor'?",
-    styleLabel: "In your style — translate the in-group phrase",
+    styleLabel: "In your style: translate the in-group phrase",
     response:
       "It's not really about quality. It's a signal that someone shipped something half-thought-through, and the team is protecting itself out loud. Listen for who they're talking past when they say it. That's where the real disagreement lives.",
   },
@@ -69,7 +69,7 @@ const useCases: UseCase[] = [
     bestFor: "Anyone who Googles too much",
     problem: "I've read six explanations of the same thing and none of them land.",
     prompt: "Explain Bayesian updating one more time. But actually.",
-    styleLabel: "In your style — the version you'd tell yourself",
+    styleLabel: "In your style: the version you'd tell yourself",
     response:
       "You already do this when you change your mind mid-conversation. Someone says something new, you don't throw out everything you believed. You just shift the weights a little. Bayesian updating is the math version of that small honest move.",
   },

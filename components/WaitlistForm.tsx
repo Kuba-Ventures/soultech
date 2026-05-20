@@ -23,7 +23,7 @@ export function WaitlistForm() {
     try {
       // TODO: swap this endpoint for Resend / Formspree / Supabase / Convex
       // when wiring up the real backend. The dev route writes to data/waitlist.json
-      // (ephemeral on Vercel — fine for a demo, not for production).
+      // (ephemeral on Vercel, fine for a demo, not for production).
       const res = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

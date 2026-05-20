@@ -1,4 +1,4 @@
-// Brand config — swap product name / tagline / contact in one place.
+// Brand config: swap product name / tagline / contact in one place.
 export const brand = {
   name: "Soultech Management",
   shortName: "Soultech",

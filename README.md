@@ -1,4 +1,4 @@
-# Soultech — Landing Page
+# Soultech: Landing Page
 
 Single-page Next.js + Tailwind landing site to validate demand for a personalized AI learning product.
 
@@ -35,12 +35,12 @@ Edit `lib/brand.ts`. Everything else picks up from there.
 
 ## Email backend
 
-`app/api/waitlist/route.ts` currently appends to `data/waitlist.json` — fine for a demo but Vercel's filesystem is ephemeral. To go live, swap the marked block for one of:
+`app/api/waitlist/route.ts` currently appends to `data/waitlist.json`, fine for a demo but Vercel's filesystem is ephemeral. To go live, swap the marked block for one of:
 
-- **Resend** — send yourself an email per signup
-- **Formspree** — point the client form at a Formspree endpoint, delete the API route
-- **Supabase / Convex / Postgres** — durable storage with a real schema
-- **Loops / ConvertKit** — purpose-built waitlist tools
+- **Resend**: send yourself an email per signup
+- **Formspree**: point the client form at a Formspree endpoint, delete the API route
+- **Supabase / Convex / Postgres**: durable storage with a real schema
+- **Loops / ConvertKit**: purpose-built waitlist tools
 
 Search for `TODO: backend swap` to find the integration point.
 
@@ -50,4 +50,4 @@ This repo is already linked to Vercel. `git push` → Vercel auto-deploys.
 
 ## Analytics
 
-Drop tracking pixels into `app/layout.tsx` — there's a `TODO` comment marking the spot.
+Drop tracking pixels into `app/layout.tsx`. There's a `TODO` comment marking the spot.

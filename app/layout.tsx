@@ -8,17 +8,17 @@ const siteUrl =
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: `${brand.name} — ${brand.tagline}`,
+  title: `${brand.name}: ${brand.tagline}`,
   description:
-    "Train a personal AI on your voice, your thinking, your style. Get unstuck faster — in a way that actually makes sense to you.",
+    "Train a personal AI on your voice, your thinking, your style. Get unstuck faster, in a way that actually makes sense to you.",
   openGraph: {
-    title: `${brand.name} — ${brand.tagline}`,
+    title: `${brand.name}: ${brand.tagline}`,
     description: "Train a personal AI on your voice, your thinking, your style.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: `${brand.name} — ${brand.tagline}`,
+    title: `${brand.name}: ${brand.tagline}`,
     description: "Train a personal AI on your voice, your thinking, your style.",
   },
 };

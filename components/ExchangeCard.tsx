@@ -4,7 +4,7 @@ type ExchangeCardProps = {
   response: string;
 };
 
-// Mini chat exchange — mirrors the home hero ChatMockup pattern.
+// Mini chat exchange, mirrors the home hero ChatMockup pattern.
 export function ExchangeCard({ prompt, styleLabel, response }: ExchangeCardProps) {
   return (
     <div className="relative">
