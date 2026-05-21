@@ -10,7 +10,10 @@ import {
 } from "@/lib/db/conversations";
 import { createMemory } from "@/lib/db/memories";
 import { generateResponse } from "@/lib/models/generateResponse";
-import { INTERVIEWER_SYSTEM_PROMPT } from "@/lib/prompts/interviewer";
+import {
+  getInterviewerSystemPrompt,
+  type InterviewerMode,
+} from "@/lib/prompts/interviewer";
 import { AppError, isAppError } from "@/lib/errors";
 import { enforceMessageLimit } from "@/lib/limits";
 import type { Message } from "@/lib/db/schema";
@@ -20,6 +23,7 @@ const MAX_TURNS_IN_CONTEXT = 24;
 
 const inputSchema = z.object({
   content: z.string().trim().min(1, "Say something to send.").max(8000),
+  mode: z.enum(["deep", "onboarding"]).optional(),
 });
 
 export type SendInterviewerMessageResult =
@@ -32,11 +36,13 @@ export async function sendInterviewerMessage(
   try {
     const parsed = inputSchema.safeParse({
       content: formData.get("content"),
+      mode: formData.get("mode") ?? undefined,
     });
     if (!parsed.success) {
       throw new AppError("invalid_input", parsed.error.issues[0]?.message ?? "Invalid input");
     }
-    const { content } = parsed.data;
+    const { content, mode } = parsed.data;
+    const interviewerMode: InterviewerMode = mode ?? "deep";
 
     const member = await getCurrentMember();
     await enforceMessageLimit(member.id);
@@ -66,9 +72,9 @@ export async function sendInterviewerMessage(
     }));
 
     const reply = await generateResponse({
-      system: INTERVIEWER_SYSTEM_PROMPT,
+      system: getInterviewerSystemPrompt(interviewerMode),
       messages: modelMessages,
-      maxTokens: 600,
+      maxTokens: interviewerMode === "onboarding" ? 180 : 600,
       metadata: { memberId: member.id },
     });
 

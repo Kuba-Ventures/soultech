@@ -117,6 +117,7 @@ export function OnboardingShell({
     startTransition(async () => {
       const fd = new FormData();
       fd.set("content", content);
+      fd.set("mode", "onboarding");
       const result = await sendInterviewerMessage(fd);
       if (!result.ok) {
         setError(result.error);
