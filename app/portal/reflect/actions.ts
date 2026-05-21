@@ -67,7 +67,6 @@ export async function sendInterviewerMessage(
       system: INTERVIEWER_SYSTEM_PROMPT,
       messages: modelMessages,
       maxTokens: 600,
-      temperature: 0.7,
       metadata: { memberId: member.id },
     });
 
