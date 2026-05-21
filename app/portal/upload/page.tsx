@@ -1,4 +1,5 @@
 import { UploadForm } from "@/components/portal/UploadForm";
+import { DrivePicker } from "@/components/portal/DrivePicker";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -18,8 +19,9 @@ export default function UploadPage() {
         afterwards in <a href="/portal/memories" className="underline underline-offset-2">Memories</a>.
       </p>
 
-      <div className="mt-10">
+      <div className="mt-10 space-y-4">
         <UploadForm />
+        <DrivePicker />
       </div>
 
       <div className="mt-12 grid sm:grid-cols-2 gap-4 text-xs text-white/45">
