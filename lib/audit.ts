@@ -3,7 +3,7 @@ import { auditLog } from "@/lib/db/schema";
 
 /**
  * Single entry point for audit log writes. Every server-side write that
- * touches a member's corpus should fire this. Keep the call site explicit —
+ * touches a member's corpus should fire this. Keep the call site explicit:
  * do not auto-wrap mutations, because that obscures what was logged.
  */
 

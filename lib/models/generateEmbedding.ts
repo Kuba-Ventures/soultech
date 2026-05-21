@@ -3,7 +3,7 @@ import type { GenerateEmbeddingOutput } from "./types";
 /**
  * Voyage AI does not ship an official Node SDK, so we call the REST endpoint
  * directly. If we ever switch to OpenAI text-embedding-3-large, the signature
- * stays the same — only this file changes.
+ * stays the same: only this file changes.
  */
 
 const VOYAGE_URL = "https://api.voyageai.com/v1/embeddings";

@@ -15,7 +15,7 @@ export default async function PortalHome() {
       </h1>
       <p className="mt-4 text-white/60 leading-relaxed">
         Your clone needs a corpus before it can sound like you. Start by feeding
-        it a few thoughts — five minutes is enough to feel the difference.
+        it a few thoughts. Five minutes is enough to feel the difference.
       </p>
 
       <div className="mt-10 grid sm:grid-cols-2 gap-4">

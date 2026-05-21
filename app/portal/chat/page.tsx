@@ -8,7 +8,7 @@ export default function ChatPage() {
         Talk with your clone.
       </h1>
       <p className="mt-4 text-white/60 leading-relaxed">
-        Reflective chat goes here — retrieval, pattern detection, citations.
+        Reflective chat goes here: retrieval, pattern detection, citations.
         Coming in Phase 3.
       </p>
     </div>

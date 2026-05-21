@@ -19,7 +19,7 @@ export default async function SettingsPage() {
         </div>
         <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-5 text-sm">
           <div className="text-white/50 text-xs">Email</div>
-          <div className="mt-1">{email || "—"}</div>
+          <div className="mt-1">{email || "-"}</div>
         </div>
       </section>
 

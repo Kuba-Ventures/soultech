@@ -14,7 +14,7 @@ import {
 /**
  * Soultech v1 corpus schema.
  *
- * The corpus is composed of `memories` — the smallest addressable unit, each
+ * The corpus is composed of `memories`, the smallest addressable unit, each
  * representing one conversation segment, document chunk, or transcribed audio
  * window. Raw inputs are preserved in `sources`; everything member-facing flows
  * through `conversations` / `messages`. `audit_log` records every write.
