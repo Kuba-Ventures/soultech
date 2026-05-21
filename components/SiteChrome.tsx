@@ -46,7 +46,7 @@ export function SiteFooter() {
         </div>
         <div className="flex items-center gap-5">
           <Link
-            href="/admin/login"
+            href="/sign-in"
             className="text-white/35 hover:text-white/70 transition"
           >
             Member log-in
