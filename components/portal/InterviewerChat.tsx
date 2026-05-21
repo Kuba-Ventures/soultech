@@ -74,7 +74,8 @@ export function InterviewerChat({ initialMessages }: Props) {
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+    if (e.nativeEvent.isComposing) return;
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       submit();
     }
@@ -131,7 +132,7 @@ export function InterviewerChat({ initialMessages }: Props) {
             </button>
           </div>
           <div className="mt-1.5 text-[11px] text-white/30">
-            ⌘+Enter to send.
+            Enter to send. Shift+Enter for a new line.
           </div>
         </div>
       </div>
