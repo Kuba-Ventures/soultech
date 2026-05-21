@@ -9,31 +9,36 @@ import {
 } from "./schema";
 
 export const INTERVIEWER_TITLE = "AI Interviewer";
+export const REFLECTIVE_TITLE = "Reflective Chat";
 
 /**
- * Single ongoing interviewer conversation per member. Created on first use.
+ * Single ongoing conversation per member, by title. Created on first use.
  */
-export async function getOrCreateInterviewerConversation(
+async function getOrCreateConversationByTitle(
   memberId: string,
+  title: string,
 ): Promise<Conversation> {
   const db = getDb();
   const existing = await db
     .select()
     .from(conversations)
-    .where(
-      and(
-        eq(conversations.memberId, memberId),
-        eq(conversations.title, INTERVIEWER_TITLE),
-      ),
-    )
+    .where(and(eq(conversations.memberId, memberId), eq(conversations.title, title)))
     .limit(1);
   if (existing.length > 0) return existing[0];
 
   const inserted = await db
     .insert(conversations)
-    .values({ memberId, title: INTERVIEWER_TITLE })
+    .values({ memberId, title })
     .returning();
   return inserted[0];
+}
+
+export function getOrCreateInterviewerConversation(memberId: string) {
+  return getOrCreateConversationByTitle(memberId, INTERVIEWER_TITLE);
+}
+
+export function getOrCreateReflectiveConversation(memberId: string) {
+  return getOrCreateConversationByTitle(memberId, REFLECTIVE_TITLE);
 }
 
 export async function appendMessage(input: NewMessage): Promise<Message> {
