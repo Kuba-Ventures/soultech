@@ -10,8 +10,10 @@ import {
 } from "@/lib/db/conversations";
 import { generateResponse } from "@/lib/models/generateResponse";
 import { searchMemories } from "@/lib/retrieval/search";
+import { detectPattern } from "@/lib/retrieval/patterns";
+import { getOrRefreshStyleProfile } from "@/lib/style/profile";
 import {
-  REFLECTIVE_BASE_PROMPT,
+  buildReflectiveSystemPrompt,
   buildReflectiveUserMessage,
   parseCitations,
 } from "@/lib/prompts/reflective";
@@ -69,10 +71,12 @@ export async function sendReflectiveMessage(
       content,
     });
 
-    // 2. Retrieve the top N memories relevant to this question.
-    const retrieved = await searchMemories(member.id, content, {
-      limit: RETRIEVAL_LIMIT,
-    });
+    // 2. Retrieve memories, run the style + pattern passes in parallel.
+    const [retrieved, styleProfile] = await Promise.all([
+      searchMemories(member.id, content, { limit: RETRIEVAL_LIMIT }),
+      getOrRefreshStyleProfile(member.id),
+    ]);
+    const pattern = await detectPattern(content, retrieved);
 
     // 3. Build model context from recent turns + retrieval-wrapped user msg.
     const history = await listMessages(convo.id, { limit: MAX_TURNS_IN_CONTEXT });
@@ -85,9 +89,9 @@ export async function sendReflectiveMessage(
       { role: "user", content: buildReflectiveUserMessage(content, retrieved) },
     ];
 
-    // 4. Call Claude.
+    // 4. Call Claude with the composed system prompt (base + style + pattern).
     const reply = await generateResponse({
-      system: REFLECTIVE_BASE_PROMPT,
+      system: buildReflectiveSystemPrompt({ styleProfile, pattern }),
       messages,
       maxTokens: 900,
       metadata: { memberId: member.id },
