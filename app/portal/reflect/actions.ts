@@ -33,6 +33,35 @@ const inputSchema = z.object({
   mode: z.enum(["deep", "onboarding"]).optional(),
 });
 
+/**
+ * Walk the conversation history backward to the most recent clone message
+ * that contains a known seed-question text, then count member messages after
+ * that point. Used to detect "answered current seed + one follow-up" so we
+ * can force the next clone reply to advance.
+ *
+ * Substring matching is reliable because the prompt requires the model to
+ * copy seed text verbatim from the list it's given.
+ */
+function countMemberAnswersSinceLastSeed(
+  history: Array<{ role: "member" | "clone"; content: string }>,
+): number {
+  let anchor = -1;
+  for (let i = history.length - 1; i >= 0; i--) {
+    const m = history[i];
+    if (m.role !== "clone") continue;
+    if (SEED_QUESTIONS.some((s) => m.content.includes(s.text))) {
+      anchor = i;
+      break;
+    }
+  }
+  if (anchor < 0) return 0;
+  let n = 0;
+  for (let i = anchor + 1; i < history.length; i++) {
+    if (history[i].role === "member") n++;
+  }
+  return n;
+}
+
 export type SendInterviewerMessageResult =
   | {
       ok: true;
@@ -85,7 +114,10 @@ export async function sendInterviewerMessage(
     }));
 
     // For onboarding mode, the system prompt includes the list of seeds the
-    // member hasn't seen yet so the model can pick the next one inline.
+    // member hasn't seen yet so the model can pick the next one inline. We
+    // also detect when the member has already answered the current seed plus
+    // one follow-up; at that point we switch to a force-advance prompt that
+    // refuses to probe further.
     let system: string;
     if (interviewerMode === "onboarding") {
       const onboardingState = await getOnboardingState(member.id);
@@ -93,7 +125,9 @@ export async function sendInterviewerMessage(
       const remaining = SEED_QUESTIONS.filter((_, idx) => !asked.has(idx)).map(
         (s) => ({ id: s.id, text: s.text }),
       );
-      system = composeOnboardingPrompt(remaining);
+      const answersOnCurrentSeed = countMemberAnswersSinceLastSeed(history);
+      const mustAdvance = answersOnCurrentSeed >= 2;
+      system = composeOnboardingPrompt(remaining, { mustAdvance });
     } else {
       system = getInterviewerSystemPrompt(interviewerMode);
     }
