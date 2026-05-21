@@ -57,18 +57,18 @@ export function OnboardingShell({
     el.scrollTop = el.scrollHeight;
   }, [messages.length, pending, stage]);
 
-  // Auto-ask first question on entering chat stage if nothing asked yet.
+  // Auto-ask the first seed exactly once when the chat stage is reached with
+  // a blank corpus. Guarded by a ref so it never fires twice.
+  const autoAskedRef = useRef(false);
   useEffect(() => {
-    if (
-      stage === "chat" &&
-      asked.length === 0 &&
-      messages.filter((m) => m.role === "clone").length === 0 &&
-      !pending
-    ) {
-      askQuestion(0);
-    }
+    if (autoAskedRef.current) return;
+    if (stage !== "chat") return;
+    if (asked.length > 0) return;
+    if (messages.some((m) => m.role === "clone")) return;
+    autoAskedRef.current = true;
+    askQuestion(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stage]);
+  }, [stage, messages.length, asked.length]);
 
   const nextUnaskedIndex = useMemo(() => {
     for (let i = 0; i < questions.length; i++) {
@@ -297,24 +297,40 @@ export function OnboardingShell({
             <div className="text-[11px] uppercase tracking-wider text-white/45">
               Seed progress
             </div>
-            <ul className="mt-3 space-y-1.5">
+            <ul className="mt-3 space-y-2">
               {questions.map((q, idx) => {
                 const isAsked = asked.includes(idx);
                 return (
                   <li
                     key={q.id}
-                    className={`flex items-center gap-2 text-xs ${
-                      isAsked ? "text-white/45" : "text-white/70"
+                    className={`flex items-center gap-2.5 text-xs transition-colors ${
+                      isAsked ? "text-white/50" : "text-white/75"
                     }`}
                   >
                     <span
-                      className={`inline-flex h-3 w-3 shrink-0 items-center justify-center rounded-full border ${
+                      aria-hidden
+                      className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors ${
                         isAsked
-                          ? "bg-emerald-400/80 border-emerald-400/80 text-[8px] text-black"
-                          : "border-white/20"
+                          ? "bg-emerald-400 border-emerald-400 text-black"
+                          : "border-white/20 bg-transparent"
                       }`}
                     >
-                      {isAsked ? "✓" : ""}
+                      {isAsked && (
+                        <svg
+                          viewBox="0 0 14 14"
+                          className="h-3 w-3"
+                          aria-hidden
+                        >
+                          <path
+                            d="M3 7.2 L6 10 L11 4"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      )}
                     </span>
                     <span className="truncate">{q.tag}</span>
                   </li>
