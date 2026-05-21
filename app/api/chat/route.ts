@@ -16,6 +16,7 @@ import {
   parseAndRenumberCitations,
 } from "@/lib/prompts/reflective";
 import { streamResponse } from "@/lib/models/streamResponse";
+import { logAudit } from "@/lib/audit";
 import { AppError, isAppError } from "@/lib/errors";
 import type { ModelMessage } from "@/lib/models/types";
 import type { Citation } from "@/app/portal/chat/types";
@@ -65,6 +66,7 @@ export async function POST(req: NextRequest) {
         controller.enqueue(encoder.encode(JSON.stringify(obj) + "\n"));
       };
 
+      const turnStartedAt = Date.now();
       try {
         const member = await getCurrentMember();
         const convo = await getOrCreateReflectiveConversation(member.id);
@@ -104,6 +106,8 @@ export async function POST(req: NextRequest) {
         ];
 
         let fullText = "";
+        let inputTokens = 0;
+        let outputTokens = 0;
         for await (const event of streamResponse({
           system: buildReflectiveSystemPrompt({ styleProfile, pattern }),
           messages,
@@ -113,6 +117,9 @@ export async function POST(req: NextRequest) {
           if (event.type === "delta") {
             fullText += event.text;
             send({ type: "delta", text: event.text });
+          } else if (event.type === "complete") {
+            inputTokens = event.inputTokens;
+            outputTokens = event.outputTokens;
           }
         }
 
@@ -125,6 +132,28 @@ export async function POST(req: NextRequest) {
           content: cleanedContent,
           citations: citationIds,
         });
+
+        // Fire-and-forget telemetry. Stored in audit_log with the member's
+        // own row so it's deletable when the member deletes their account.
+        await logAudit({
+          memberId: member.id,
+          actor: "system",
+          action: "chat.turn",
+          targetType: "message",
+          targetId: cloneMsg.id,
+          details: {
+            queryLength: content.length,
+            retrievedIds: retrieved.map((m) => m.id),
+            retrievedDistances: retrieved.map((m) => Number(m.distance.toFixed(4))),
+            patternUsed: pattern !== null,
+            styleProfileUsed: styleProfile !== null,
+            citationCount: citationIds.length,
+            replyLength: cleanedContent.length,
+            inputTokens,
+            outputTokens,
+            latencyMs: Date.now() - turnStartedAt,
+          },
+        }).catch((err) => console.error("[api.chat.audit]", err));
 
         send({
           type: "complete",
