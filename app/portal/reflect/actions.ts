@@ -81,12 +81,13 @@ export async function sendInterviewerMessage(
     revalidatePath("/portal/reflect");
     return { ok: true, member: memberMessage, clone: cloneMessage };
   } catch (err) {
-    const userMessage = isAppError(err)
-      ? err.userMessage
-      : "Something went wrong on our end. Try again in a moment.";
-    if (!isAppError(err)) {
-      console.error("[reflect.sendInterviewerMessage]", err);
+    if (isAppError(err)) {
+      return { ok: false, error: err.userMessage };
     }
-    return { ok: false, error: userMessage };
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error("[reflect.sendInterviewerMessage]", err);
+    // Surface the underlying detail while we're in private preview. Swap back
+    // to a generic message before any external pilot.
+    return { ok: false, error: `Server error: ${detail.slice(0, 240)}` };
   }
 }
