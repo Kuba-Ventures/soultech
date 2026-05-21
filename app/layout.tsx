@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { brand } from "@/lib/brand";
 
@@ -29,11 +30,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className="min-h-screen bg-ink text-white font-sans antialiased">
-        {/* TODO: analytics / tracking pixels go here (e.g. Vercel Analytics, Plausible, GA) */}
-        {children}
-      </body>
-    </html>
+    <ClerkProvider
+      afterSignOutUrl="/"
+      appearance={{
+        variables: {
+          colorPrimary: "#ffffff",
+          colorBackground: "#0a0a0b",
+          colorText: "#f5f5f5",
+          colorInputBackground: "#141417",
+          colorInputText: "#f5f5f5",
+        },
+      }}
+    >
+      <html lang="en" className="dark">
+        <body className="min-h-screen bg-ink text-white font-sans antialiased">
+          {/* TODO: analytics / tracking pixels go here (e.g. Vercel Analytics, Plausible, GA) */}
+          {children}
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
