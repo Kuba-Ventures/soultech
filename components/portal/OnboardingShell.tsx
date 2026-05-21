@@ -155,6 +155,14 @@ export function OnboardingShell({
           setAsked((prev) => (prev.includes(idx) ? prev : [...prev, idx]));
         }
       }
+      // Server marked onboarding complete (all seeds asked + closing line).
+      // Brief beat so the closing message lands visually, then redirect home.
+      if (result.onboardingComplete) {
+        setTimeout(() => {
+          router.push("/portal");
+          router.refresh();
+        }, 1400);
+      }
     });
   }
 
@@ -280,6 +288,19 @@ export function OnboardingShell({
                 disabled={pending}
                 className="flex-1 resize-none bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none min-h-[20px] max-h-[160px]"
               />
+              <button
+                type="button"
+                onClick={() => {
+                  if (nextUnaskedIndex < 0 || pending) return;
+                  setDraft("");
+                  askQuestion(nextUnaskedIndex);
+                }}
+                disabled={pending || nextUnaskedIndex < 0}
+                title="Skip this question and move to the next seed"
+                className="shrink-0 inline-flex items-center justify-center rounded-full border border-white/15 text-white/60 px-3 py-1 text-xs hover:text-white hover:border-white/30 disabled:opacity-30 transition"
+              >
+                Skip
+              </button>
               <button
                 type="button"
                 onClick={sendMessage}

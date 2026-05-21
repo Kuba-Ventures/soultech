@@ -19,6 +19,7 @@ import {
 import { SEED_QUESTIONS } from "@/lib/onboarding/questions";
 import {
   getOnboardingState,
+  markOnboardingCompleted,
   recordQuestionAsked,
 } from "@/lib/onboarding/state";
 import { AppError, isAppError } from "@/lib/errors";
@@ -70,6 +71,8 @@ export type SendInterviewerMessageResult =
       clone: Message;
       /** Seed question id the Interviewer just advanced to, if any. */
       advancedSeedId?: string;
+      /** Onboarding just completed (all seeds asked + closing line returned). */
+      onboardingComplete?: boolean;
     }
   | { ok: false; error: string };
 
@@ -164,15 +167,33 @@ export async function sendInterviewerMessage(
       content: cloneContent,
     });
 
+    // When all seed questions have been asked and the model produced a turn
+    // without advancing (no [SEED:] marker, because the seed list was empty),
+    // we're at the end. Mark onboarding complete so the client can redirect.
+    let onboardingComplete = false;
+    if (interviewerMode === "onboarding" && !advancedSeedId) {
+      const updatedState = await getOnboardingState(member.id);
+      const totalAsked = updatedState?.askedIndices.length ?? 0;
+      if (
+        totalAsked >= SEED_QUESTIONS.length &&
+        !updatedState?.completedAt
+      ) {
+        await markOnboardingCompleted(member.id);
+        onboardingComplete = true;
+      }
+    }
+
     revalidatePath("/portal/reflect");
     if (interviewerMode === "onboarding") {
       revalidatePath("/portal/onboarding");
+      if (onboardingComplete) revalidatePath("/portal");
     }
     return {
       ok: true,
       member: memberMessage,
       clone: cloneMessage,
       advancedSeedId,
+      onboardingComplete,
     };
   } catch (err) {
     if (isAppError(err)) {
