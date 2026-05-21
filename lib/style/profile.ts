@@ -3,6 +3,7 @@ import { getDb } from "@/lib/db/client";
 import { memories, members } from "@/lib/db/schema";
 import { generateResponse } from "@/lib/models/generateResponse";
 import { logAudit } from "@/lib/audit";
+import { stripEmDashes } from "@/lib/text";
 
 /**
  * Dynamic style profile extracted from the member's own writing. Stored in
@@ -135,7 +136,7 @@ async function extractStyleProfile(
       messages: [{ role: "user", content: corpus }],
       maxTokens: 400,
     });
-    const profile = resp.content.trim();
+    const profile = stripEmDashes(resp.content.trim());
     if (!profile) return null;
     return {
       profile,

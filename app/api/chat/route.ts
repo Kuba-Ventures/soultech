@@ -19,6 +19,7 @@ import { streamResponse } from "@/lib/models/streamResponse";
 import { logAudit } from "@/lib/audit";
 import { AppError, isAppError } from "@/lib/errors";
 import { enforceMessageLimit } from "@/lib/limits";
+import { stripEmDashes } from "@/lib/text";
 import type { ModelMessage } from "@/lib/models/types";
 import type { Citation } from "@/app/portal/chat/types";
 
@@ -125,8 +126,9 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        const { content: cleanedContent, citationIds } =
+        const { content: renumbered, citationIds } =
           parseAndRenumberCitations(fullText, retrieved);
+        const cleanedContent = stripEmDashes(renumbered);
 
         const cloneMsg = await appendMessage({
           conversationId: convo.id,

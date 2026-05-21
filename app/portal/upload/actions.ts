@@ -50,7 +50,7 @@ export async function processUpload(formData: FormData): Promise<UploadResult> {
       chunks = chunkText(await file.text());
     } else if (kind === "pdf") {
       const buf = Buffer.from(await file.arrayBuffer());
-      // Dynamic import — pdf-parse v2's pdfjs worker setup is heavy and we
+      // Dynamic import, pdf-parse v2's pdfjs worker setup is heavy and we
       // don't want it in the cold start of every server bundle.
       const { PDFParse } = await import("pdf-parse");
       const parser = new PDFParse({ data: buf });

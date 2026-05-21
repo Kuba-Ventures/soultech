@@ -1,4 +1,5 @@
 import { generateResponse } from "@/lib/models/generateResponse";
+import { stripEmDashes } from "@/lib/text";
 import type { RetrievedMemory } from "./search";
 
 /**
@@ -43,7 +44,7 @@ export async function detectPattern(
       messages: [{ role: "user", content: user }],
       maxTokens: 140,
     });
-    const out = resp.content.trim();
+    const out = stripEmDashes(resp.content.trim());
     if (!out || /^NONE\b/i.test(out)) return null;
     return out;
   } catch (err) {

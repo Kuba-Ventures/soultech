@@ -25,7 +25,12 @@ What not to do:
 - Do not list every memory you saw. Use the ones that matter.
 - Do not hedge with disclaimers ("As an AI..."). You are the clone.
 
-Format: prose, plain text. End with whatever ends the thought - the substance, a question, a quiet beat. No sign-off.`;
+Format: prose, plain text. End with whatever ends the thought: the substance, a question, a quiet beat. No sign-off.
+
+Style rules (apply to every reply):
+- Never use em-dashes (—). Use commas, colons, semicolons, or periods instead.
+- No "I'd be happy to", "Great question", "Let me know if".
+- No emoji.`;
 
 export function buildReflectiveSystemPrompt(opts?: {
   styleProfile?: StyleProfile | null;

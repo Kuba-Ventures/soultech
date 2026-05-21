@@ -36,7 +36,7 @@ export const SEED_QUESTIONS: SeedQuestion[] = [
   {
     id: "current-craft",
     tag: "Working on",
-    text: "Describe something you're working on right now (anywhere — work, life, side thing) that you don't quite know how to explain to other people yet.",
+    text: "Describe something you're working on right now (anywhere, work, life, side thing) that you don't quite know how to explain to other people yet.",
   },
   {
     id: "felt-self",
@@ -56,7 +56,7 @@ export const SEED_QUESTIONS: SeedQuestion[] = [
   {
     id: "story-you-tell",
     tag: "Self-story",
-    text: "Is there a story you keep telling yourself — about your past, your work, who you are — that you suspect isn't quite right anymore?",
+    text: "Is there a story you keep telling yourself, about your past, your work, who you are, that you suspect isn't quite right anymore?",
   },
   {
     id: "unpopular",
@@ -66,7 +66,7 @@ export const SEED_QUESTIONS: SeedQuestion[] = [
   {
     id: "uninterrupted-year",
     tag: "If unconstrained",
-    text: "If you had a full year of uninterrupted time and money was handled, what would you actually do with it? Not what sounds good — what you'd actually do.",
+    text: "If you had a full year of uninterrupted time and money was handled, what would you actually do with it? Not what sounds good, what you'd actually do.",
   },
 ];
 

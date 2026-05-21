@@ -23,6 +23,7 @@ import {
 } from "@/lib/onboarding/state";
 import { AppError, isAppError } from "@/lib/errors";
 import { enforceMessageLimit } from "@/lib/limits";
+import { stripEmDashes } from "@/lib/text";
 import type { Message } from "@/lib/db/schema";
 import type { ModelMessage } from "@/lib/models/types";
 
@@ -154,6 +155,8 @@ export async function sendInterviewerMessage(
         }
       }
     }
+    // Style steward: scrub em-dashes from the model's reply before save.
+    cloneContent = stripEmDashes(cloneContent);
 
     const cloneMessage = await appendMessage({
       conversationId: convo.id,

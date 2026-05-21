@@ -355,7 +355,7 @@ export function OnboardingShell({
             className="rounded-xl bg-white text-black px-3 py-2 text-xs font-medium hover:bg-white/90 disabled:opacity-30 transition"
           >
             {canFinish
-              ? "I'm ready — go to portal"
+              ? "I'm ready, go to portal"
               : `Answer ${Math.max(0, minMessagesToComplete - memberMsgs)} more to finish`}
           </button>
 
@@ -364,7 +364,7 @@ export function OnboardingShell({
               type="button"
               onClick={() => askQuestion(nextUnaskedIndex)}
               disabled={pending}
-              title="Skip ahead — usually the Interviewer advances on its own."
+              title="Skip ahead, usually the Interviewer advances on its own."
               className="rounded-xl border border-white/10 text-white/55 px-3 py-2 text-xs hover:text-white/80 hover:border-white/25 disabled:opacity-50 transition"
             >
               Skip to next seed

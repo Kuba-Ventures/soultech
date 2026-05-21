@@ -1,6 +1,9 @@
 import { generateResponse } from "@/lib/models/generateResponse";
+import { stripEmDashes } from "@/lib/text";
 
-const SUMMARIZE_SYSTEM = `Summarize the input as exactly one neutral, present-tense sentence under 25 words. No preamble. No quotes. No first-person framing ("the speaker..."). Just the sentence.`;
+const SUMMARIZE_SYSTEM = `Summarize the input as exactly one neutral, present-tense sentence under 25 words. No preamble. No quotes. No first-person framing ("the speaker..."). Just the sentence.
+
+Style rule: never use em-dashes. Use commas, colons, or periods.`;
 
 const SUMMARIZE_MODEL = "claude-haiku-4-5-20251001";
 
@@ -17,7 +20,7 @@ export async function summarizeChunk(content: string): Promise<string> {
       messages: [{ role: "user", content }],
       maxTokens: 80,
     });
-    const line = resp.content.trim().replace(/^\s*[-•]\s*/, "");
+    const line = stripEmDashes(resp.content.trim().replace(/^\s*[-•]\s*/, ""));
     return line.length > 0 ? line : fallback(content);
   } catch (err) {
     console.error("[summarize] haiku failed; using snippet", err);
