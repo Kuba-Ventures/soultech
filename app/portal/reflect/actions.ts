@@ -11,9 +11,16 @@ import {
 import { createMemory } from "@/lib/db/memories";
 import { generateResponse } from "@/lib/models/generateResponse";
 import {
+  composeOnboardingPrompt,
   getInterviewerSystemPrompt,
+  parseSeedMarker,
   type InterviewerMode,
 } from "@/lib/prompts/interviewer";
+import { SEED_QUESTIONS } from "@/lib/onboarding/questions";
+import {
+  getOnboardingState,
+  recordQuestionAsked,
+} from "@/lib/onboarding/state";
 import { AppError, isAppError } from "@/lib/errors";
 import { enforceMessageLimit } from "@/lib/limits";
 import type { Message } from "@/lib/db/schema";
@@ -27,7 +34,13 @@ const inputSchema = z.object({
 });
 
 export type SendInterviewerMessageResult =
-  | { ok: true; member: Message; clone: Message }
+  | {
+      ok: true;
+      member: Message;
+      clone: Message;
+      /** Seed question id the Interviewer just advanced to, if any. */
+      advancedSeedId?: string;
+    }
   | { ok: false; error: string };
 
 export async function sendInterviewerMessage(
@@ -71,22 +84,59 @@ export async function sendInterviewerMessage(
       content: m.content,
     }));
 
+    // For onboarding mode, the system prompt includes the list of seeds the
+    // member hasn't seen yet so the model can pick the next one inline.
+    let system: string;
+    if (interviewerMode === "onboarding") {
+      const onboardingState = await getOnboardingState(member.id);
+      const asked = new Set(onboardingState?.askedIndices ?? []);
+      const remaining = SEED_QUESTIONS.filter((_, idx) => !asked.has(idx)).map(
+        (s) => ({ id: s.id, text: s.text }),
+      );
+      system = composeOnboardingPrompt(remaining);
+    } else {
+      system = getInterviewerSystemPrompt(interviewerMode);
+    }
+
     const reply = await generateResponse({
-      system: getInterviewerSystemPrompt(interviewerMode),
+      system,
       messages: modelMessages,
-      maxTokens: interviewerMode === "onboarding" ? 180 : 600,
+      maxTokens: interviewerMode === "onboarding" ? 220 : 600,
       metadata: { memberId: member.id },
     });
 
-    // 4. Save the clone's reply.
+    // In onboarding mode, parse out the [SEED:<id>] marker, record the
+    // advancement, and save a clean message without the marker visible.
+    let cloneContent = reply.content;
+    let advancedSeedId: string | undefined;
+    if (interviewerMode === "onboarding") {
+      const parsed = parseSeedMarker(reply.content);
+      if (parsed.seedId) {
+        const idx = SEED_QUESTIONS.findIndex((s) => s.id === parsed.seedId);
+        if (idx >= 0) {
+          await recordQuestionAsked(member.id, idx);
+          advancedSeedId = parsed.seedId;
+          cloneContent = parsed.content;
+        }
+      }
+    }
+
     const cloneMessage = await appendMessage({
       conversationId: convo.id,
       role: "clone",
-      content: reply.content,
+      content: cloneContent,
     });
 
     revalidatePath("/portal/reflect");
-    return { ok: true, member: memberMessage, clone: cloneMessage };
+    if (interviewerMode === "onboarding") {
+      revalidatePath("/portal/onboarding");
+    }
+    return {
+      ok: true,
+      member: memberMessage,
+      clone: cloneMessage,
+      advancedSeedId,
+    };
   } catch (err) {
     if (isAppError(err)) {
       return { ok: false, error: err.userMessage };

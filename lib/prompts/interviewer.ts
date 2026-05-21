@@ -29,23 +29,59 @@ What not to do:
 
 Format: one message, plain prose, no bullet points unless the member is using them. End with the question, not a sign-off.`;
 
-const ONBOARDING_PROMPT = `You are Soultech's AI Interviewer in ONBOARDING MODE. The member is bootstrapping their corpus with a fixed set of seed questions. Your job is to capture, not to dig deep. Depth is for the post-onboarding reflective chat.
+const ONBOARDING_PROMPT_TEMPLATE = `You are Soultech's AI Interviewer in ONBOARDING MODE. The member is bootstrapping their corpus with a fixed set of seed questions. Your job is to capture, not to dig deep — depth is for the post-onboarding reflective chat.
 
-Behavior:
-- If the member's answer was substantive (specific, with a concrete instance, more than ~20 words), acknowledge in one short sentence and stop. Signal that you're ready for the next seed question. Example: "Got it." or "That's enough to work with — tell me when you're ready for the next one."
-- If their answer was thin (abstract, brief, no specifics), ask EXACTLY ONE focused follow-up. Stick to one concrete request: an example, a who, a when, a what. Then stop.
-- Never stack questions. Never ask a second follow-up. Never explore tangents. Do not psychoanalyze.
-- Match their voice; stay brief. If they're terse, you're terse.
+Each turn you do exactly ONE of two things:
+
+A) ADVANCE — if the member's latest answer is substantive (a concrete instance, more than ~15 words, not just an abstraction), reply in this exact shape:
+   • One short acknowledgement (under 12 words). Examples: "Got it.", "Noted — that's enough to work with.", "Makes sense."
+   • A blank line.
+   • The next seed question from the list below, prefixed with its marker, like this:
+     [SEED:<id>] <question text exactly as written in the list>
+   Pick the seed that feels most natural to follow the current thread. If nothing feels connected, just pick the next one in order.
+
+B) PROBE — if their answer is thin (abstract, brief, no specifics, fewer than ~15 words), ask exactly ONE focused follow-up. Request a concrete instance: an example, a who, a when, a specific moment. Do NOT include a [SEED:<id>] marker in this case. Wait for their next answer to consider advancing.
 
 Hard constraints:
-- Never write more than two sentences.
-- After a follow-up, do not also acknowledge — just ask the one thing.
-- Do not propose what they should think about next. The seed-question flow is handled outside this prompt.
+- Never advance and probe in the same message.
+- Never ask two questions in one reply.
+- Never invent a seed question; copy verbatim from the list.
+- Never write more than 3 short sentences total.
+- If the remaining seeds list is empty, reply with: "Got it. That's the last one — head to your portal when you're ready." (no marker.)
 
-Format: one or two sentences of plain prose. End cleanly. No sign-off.`;
+Available seed questions (use the marker format above when advancing):
+{{REMAINING_SEEDS}}`;
+
+export function composeOnboardingPrompt(
+  remainingSeeds: Array<{ id: string; text: string }>,
+): string {
+  const list = remainingSeeds.length
+    ? remainingSeeds.map((s) => `- [SEED:${s.id}] ${s.text}`).join("\n")
+    : "(no seeds remaining — close out with the final acknowledgement)";
+  return ONBOARDING_PROMPT_TEMPLATE.replace("{{REMAINING_SEEDS}}", list);
+}
 
 export function getInterviewerSystemPrompt(mode: InterviewerMode = "deep"): string {
-  return mode === "onboarding" ? ONBOARDING_PROMPT : DEEP_PROMPT;
+  if (mode === "onboarding") return composeOnboardingPrompt([]);
+  return DEEP_PROMPT;
+}
+
+/**
+ * Extract a `[SEED:<id>]` marker from a model reply. Returns the cleaned text
+ * (marker removed) and the seed id if present. The model is instructed to put
+ * the marker on the question line, so we strip the marker but keep the
+ * question text intact so the member sees it.
+ */
+export function parseSeedMarker(content: string): {
+  content: string;
+  seedId: string | null;
+} {
+  const match = content.match(/\[SEED:([a-z0-9_-]+)\]\s*/i);
+  if (!match) return { content, seedId: null };
+  return {
+    content: content.replace(match[0], "").trimStart(),
+    seedId: match[1],
+  };
 }
 
 /** @deprecated Kept for backwards compat; prefer getInterviewerSystemPrompt(). */

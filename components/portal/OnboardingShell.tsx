@@ -10,6 +10,10 @@ import {
 } from "@/app/portal/onboarding/actions";
 import type { SeedQuestion } from "@/lib/onboarding/questions";
 
+function findSeedIndex(seedId: string, questions: SeedQuestion[]): number {
+  return questions.findIndex((q) => q.id === seedId);
+}
+
 type UIMessage = {
   id: string;
   role: "member" | "clone";
@@ -40,6 +44,7 @@ export function OnboardingShell({
   );
   const [messages, setMessages] = useState<UIMessage[]>(initialMessages);
   const [memberMsgs, setMemberMsgs] = useState(memberMessageCount);
+  const [asked, setAsked] = useState<number[]>(askedIndices);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -56,7 +61,7 @@ export function OnboardingShell({
   useEffect(() => {
     if (
       stage === "chat" &&
-      askedIndices.length === 0 &&
+      asked.length === 0 &&
       messages.filter((m) => m.role === "clone").length === 0 &&
       !pending
     ) {
@@ -67,10 +72,10 @@ export function OnboardingShell({
 
   const nextUnaskedIndex = useMemo(() => {
     for (let i = 0; i < questions.length; i++) {
-      if (!askedIndices.includes(i)) return i;
+      if (!asked.includes(i)) return i;
     }
     return -1;
-  }, [askedIndices, questions.length]);
+  }, [asked, questions.length]);
 
   const canFinish = memberMsgs >= minMessagesToComplete;
 
@@ -99,6 +104,7 @@ export function OnboardingShell({
           createdAt: new Date().toISOString(),
         },
       ]);
+      setAsked((prev) => (prev.includes(index) ? prev : [...prev, index]));
       router.refresh();
     });
   }
@@ -141,6 +147,14 @@ export function OnboardingShell({
           createdAt: result.clone.createdAt.toString(),
         },
       ]);
+      // If the Interviewer advanced to a new seed inside its reply, mark it
+      // asked locally so the sidebar updates without a hard refresh.
+      if (result.advancedSeedId) {
+        const idx = findSeedIndex(result.advancedSeedId, questions);
+        if (idx >= 0) {
+          setAsked((prev) => (prev.includes(idx) ? prev : [...prev, idx]));
+        }
+      }
     });
   }
 
@@ -237,7 +251,7 @@ export function OnboardingShell({
         </div>
       </header>
 
-      <div className="flex-1 min-h-0 grid lg:grid-cols-[1fr_280px] max-w-4xl w-full gap-6 px-8 pb-2">
+      <div className="flex-1 min-h-0 grid lg:grid-cols-[1fr_260px] max-w-4xl w-full gap-6 px-8 pb-2">
         <div className="min-h-0 flex flex-col rounded-2xl border border-white/8 bg-white/[0.02] overflow-hidden">
           <div
             ref={listRef}
@@ -281,48 +295,37 @@ export function OnboardingShell({
         <aside className="lg:flex flex-col gap-3 text-sm hidden">
           <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-4">
             <div className="text-[11px] uppercase tracking-wider text-white/45">
-              Seed questions
+              Seed progress
             </div>
-            <ul className="mt-3 space-y-2">
+            <ul className="mt-3 space-y-1.5">
               {questions.map((q, idx) => {
-                const asked = askedIndices.includes(idx);
+                const isAsked = asked.includes(idx);
                 return (
-                  <li key={q.id}>
-                    <button
-                      type="button"
-                      onClick={() => askQuestion(idx)}
-                      disabled={pending}
-                      className={`w-full text-left rounded-lg px-2.5 py-1.5 text-xs transition ${
-                        asked
-                          ? "text-white/40 hover:text-white/70"
-                          : "text-white/75 hover:text-white hover:bg-white/5"
+                  <li
+                    key={q.id}
+                    className={`flex items-center gap-2 text-xs ${
+                      isAsked ? "text-white/45" : "text-white/70"
+                    }`}
+                  >
+                    <span
+                      className={`inline-flex h-3 w-3 shrink-0 items-center justify-center rounded-full border ${
+                        isAsked
+                          ? "bg-emerald-400/80 border-emerald-400/80 text-[8px] text-black"
+                          : "border-white/20"
                       }`}
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="truncate">{q.tag}</span>
-                        {asked && (
-                          <span className="text-[9px] uppercase tracking-wider text-white/30">
-                            asked
-                          </span>
-                        )}
-                      </div>
-                    </button>
+                      {isAsked ? "✓" : ""}
+                    </span>
+                    <span className="truncate">{q.tag}</span>
                   </li>
                 );
               })}
             </ul>
+            <p className="mt-3 text-[11px] text-white/35 leading-relaxed">
+              The Interviewer picks the next seed for you when your answer
+              lands. Keep going as long as it feels useful.
+            </p>
           </div>
-
-          {nextUnaskedIndex >= 0 && (
-            <button
-              type="button"
-              onClick={() => askQuestion(nextUnaskedIndex)}
-              disabled={pending}
-              className="rounded-xl border border-white/15 text-white/80 px-3 py-2 text-xs hover:text-white hover:border-white/30 disabled:opacity-50 transition"
-            >
-              Ask next question →
-            </button>
-          )}
 
           <button
             type="button"
@@ -335,13 +338,22 @@ export function OnboardingShell({
             }
             className="rounded-xl bg-white text-black px-3 py-2 text-xs font-medium hover:bg-white/90 disabled:opacity-30 transition"
           >
-            {canFinish ? "I'm ready — go to portal" : `Answer ${Math.max(0, minMessagesToComplete - memberMsgs)} more to finish`}
+            {canFinish
+              ? "I'm ready — go to portal"
+              : `Answer ${Math.max(0, minMessagesToComplete - memberMsgs)} more to finish`}
           </button>
 
-          <p className="text-[11px] text-white/35 leading-relaxed">
-            Each answer becomes a memory. You can revisit and redact anything
-            in Memories afterwards.
-          </p>
+          {nextUnaskedIndex >= 0 && (
+            <button
+              type="button"
+              onClick={() => askQuestion(nextUnaskedIndex)}
+              disabled={pending}
+              title="Skip ahead — usually the Interviewer advances on its own."
+              className="rounded-xl border border-white/10 text-white/55 px-3 py-2 text-xs hover:text-white/80 hover:border-white/25 disabled:opacity-50 transition"
+            >
+              Skip to next seed
+            </button>
+          )}
         </aside>
       </div>
 
