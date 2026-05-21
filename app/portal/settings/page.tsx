@@ -2,6 +2,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { getCurrentMember } from "@/lib/db/members";
 import { getCorpusStats } from "@/lib/db/stats";
 import { AccountDeletion } from "@/components/portal/AccountDeletion";
+import { ResetCorpus } from "@/components/portal/ResetCorpus";
 
 export const dynamic = "force-dynamic";
 
@@ -91,6 +92,7 @@ export default async function SettingsPage() {
         )}
       </section>
 
+      <ResetCorpus />
       <AccountDeletion email={email} />
     </div>
   );
