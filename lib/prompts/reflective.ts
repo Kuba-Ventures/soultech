@@ -90,23 +90,37 @@ function sourceLabel(s: RetrievedMemory["sourceType"]): string {
 }
 
 /**
- * Parse [M1], [M2] markers out of a model response and map them to memory
- * UUIDs in the order they appeared in the retrieval set. Unknown references
- * are dropped silently (the model can hallucinate citation ids).
+ * Walk the model response, find all [Mn] markers in encounter order, drop the
+ * ones that don't resolve to a real retrieved memory, then renumber the rest
+ * sequentially as [M1], [M2], [M3]. Returns the cleaned content and the
+ * citation IDs in the same order, so on reload `citations[i]` always pairs
+ * with `[M${i+1}]` in the saved text.
  */
+export function parseAndRenumberCitations(
+  response: string,
+  retrieved: RetrievedMemory[],
+): { content: string; citationIds: string[] } {
+  const remap = new Map<string, number>();
+  const ids: string[] = [];
+
+  const cleaned = response.replace(/\[M(\d+)\]/g, (_match, n: string) => {
+    if (remap.has(n)) return `[M${remap.get(n)}]`;
+    const idx = Number(n) - 1;
+    const mem = retrieved[idx];
+    if (!mem) return "";
+    const next = ids.length + 1;
+    remap.set(n, next);
+    ids.push(mem.id);
+    return `[M${next}]`;
+  });
+
+  return { content: cleaned, citationIds: ids };
+}
+
+/** @deprecated Kept until callers migrate; prefer parseAndRenumberCitations. */
 export function parseCitations(
   response: string,
   retrieved: RetrievedMemory[],
 ): string[] {
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const match of response.matchAll(/\[M(\d+)\]/g)) {
-    const idx = Number(match[1]) - 1;
-    const mem = retrieved[idx];
-    if (mem && !seen.has(mem.id)) {
-      seen.add(mem.id);
-      out.push(mem.id);
-    }
-  }
-  return out;
+  return parseAndRenumberCitations(response, retrieved).citationIds;
 }

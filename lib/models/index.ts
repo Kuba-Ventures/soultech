@@ -7,6 +7,7 @@
  */
 
 export { generateResponse } from "./generateResponse";
+export { streamResponse, type StreamEvent } from "./streamResponse";
 export { generateEmbedding } from "./generateEmbedding";
 export { transcribe } from "./transcribe";
 export type {

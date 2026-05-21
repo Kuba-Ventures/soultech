@@ -1,4 +1,4 @@
-import { eq, inArray } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 import { getCurrentMember } from "@/lib/db/members";
 import {
   getOrCreateReflectiveConversation,
@@ -7,7 +7,7 @@ import {
 import { getDb } from "@/lib/db/client";
 import { memories } from "@/lib/db/schema";
 import { ReflectiveChat } from "@/components/portal/ReflectiveChat";
-import type { CitedMessage } from "./actions";
+import type { CitedMessage } from "./types";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +16,6 @@ export default async function ChatPage() {
   const convo = await getOrCreateReflectiveConversation(member.id);
   const msgs = await listMessages(convo.id, { limit: 100 });
 
-  // Hydrate citation memory snippets for any clone messages with cited IDs.
   const allCitedIds = Array.from(
     new Set(msgs.flatMap((m) => (m.role === "clone" ? m.citations : []))),
   );
@@ -35,6 +34,8 @@ export default async function ChatPage() {
     : [];
   const memById = new Map(citedMemories.map((m) => [m.id, m]));
 
+  // Saved citations are stored in the same order their [Mn] markers were
+  // renumbered to in the content, so citations[i] always pairs with [M${i+1}].
   const initialMessages: CitedMessage[] = msgs.map((m) => ({
     id: m.id,
     role: m.role,
