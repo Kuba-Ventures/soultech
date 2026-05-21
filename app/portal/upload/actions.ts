@@ -10,6 +10,7 @@ import { chunkText } from "@/lib/uploads/chunk";
 import { summarizeChunk } from "@/lib/prompts/summarize";
 import { transcribe } from "@/lib/models/transcribe";
 import { AppError, isAppError } from "@/lib/errors";
+import { enforceUploadLimit } from "@/lib/limits";
 import type { UploadResult } from "./types";
 
 export async function processUpload(formData: FormData): Promise<UploadResult> {
@@ -32,6 +33,7 @@ export async function processUpload(formData: FormData): Promise<UploadResult> {
     }
 
     const member = await getCurrentMember();
+    await enforceUploadLimit(member.id);
     const sourceType = kind === "audio" ? "upload_audio" : "upload_doc";
 
     const source = await createSource({

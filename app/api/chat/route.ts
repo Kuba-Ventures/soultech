@@ -18,6 +18,7 @@ import {
 import { streamResponse } from "@/lib/models/streamResponse";
 import { logAudit } from "@/lib/audit";
 import { AppError, isAppError } from "@/lib/errors";
+import { enforceMessageLimit } from "@/lib/limits";
 import type { ModelMessage } from "@/lib/models/types";
 import type { Citation } from "@/app/portal/chat/types";
 
@@ -69,6 +70,7 @@ export async function POST(req: NextRequest) {
       const turnStartedAt = Date.now();
       try {
         const member = await getCurrentMember();
+        await enforceMessageLimit(member.id);
         const convo = await getOrCreateReflectiveConversation(member.id);
 
         const memberMsg = await appendMessage({

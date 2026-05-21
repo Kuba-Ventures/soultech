@@ -12,6 +12,7 @@ import { createMemory } from "@/lib/db/memories";
 import { generateResponse } from "@/lib/models/generateResponse";
 import { INTERVIEWER_SYSTEM_PROMPT } from "@/lib/prompts/interviewer";
 import { AppError, isAppError } from "@/lib/errors";
+import { enforceMessageLimit } from "@/lib/limits";
 import type { Message } from "@/lib/db/schema";
 import type { ModelMessage } from "@/lib/models/types";
 
@@ -38,6 +39,7 @@ export async function sendInterviewerMessage(
     const { content } = parsed.data;
 
     const member = await getCurrentMember();
+    await enforceMessageLimit(member.id);
     const convo = await getOrCreateInterviewerConversation(member.id);
 
     // 1. Save the member's message.
