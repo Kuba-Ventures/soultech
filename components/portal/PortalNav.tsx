@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 const items = [
-  { href: "/portal/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/portal", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/portal/reflect", label: "Reflect", icon: Sparkles },
   { href: "/portal/chat", label: "Chat", icon: MessageSquare },
   { href: "/portal/upload", label: "Upload", icon: Upload },
@@ -30,8 +30,9 @@ export function PortalNav() {
       </div>
 
       {items.map((item) => {
-        const active =
-          pathname === item.href || pathname?.startsWith(`${item.href}/`);
+        const active = item.exact
+          ? pathname === item.href
+          : pathname === item.href || pathname?.startsWith(`${item.href}/`);
         const Icon = item.icon;
         return (
           <Link
