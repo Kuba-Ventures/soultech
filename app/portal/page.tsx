@@ -7,12 +7,14 @@ import {
   Upload,
   Sparkles,
   Library,
+  BookOpen,
   ArrowRight,
   type LucideIcon,
 } from "lucide-react";
 import { getCurrentMember } from "@/lib/db/members";
 import { getCorpusStats } from "@/lib/db/stats";
 import { getOnboardingState } from "@/lib/onboarding/state";
+import { NewChatBox } from "@/components/portal/NewChatBox";
 
 export const dynamic = "force-dynamic";
 
@@ -56,8 +58,8 @@ export default async function PortalHome() {
       </h1>
       <p className="mt-4 text-white/60 leading-relaxed">
         {empty
-          ? "Nothing in here yet. Upload a document or start a reflection and your brain begins to fill in."
-          : "Everything your clone has learned so far, at a glance."}
+          ? "Nothing in here yet. Ask your clone something, or upload a document to start filling in your brain."
+          : "Ask your clone anything, or review what it has learned below."}
       </p>
 
       {onboardingInProgress && (
@@ -71,6 +73,11 @@ export default async function PortalHome() {
           <span className="text-xs text-amber-200/70">Resume →</span>
         </Link>
       )}
+
+      {/* New chat — primary action at the top */}
+      <div className="mt-6">
+        <NewChatBox />
+      </div>
 
       {(stats.uploadsProcessing > 0 || stats.uploadsFailed > 0) && (
         <div className="mt-6 rounded-xl border border-white/8 bg-white/[0.02] px-4 py-3 text-xs text-white/60">
@@ -89,8 +96,11 @@ export default async function PortalHome() {
         </div>
       )}
 
-      {/* Headline panels */}
-      <div className="mt-8 grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Data cards */}
+      <div className="mt-10 text-xs uppercase tracking-wider text-white/40">
+        Your brain
+      </div>
+      <div className="mt-3 grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Panel
           icon={Brain}
           label="Memories"
@@ -148,7 +158,7 @@ export default async function PortalHome() {
 
       {/* Quick actions */}
       <div className="mt-10 text-xs uppercase tracking-wider text-white/40">
-        Pick up where you left off
+        Keep building
       </div>
       <div className="mt-3 grid sm:grid-cols-3 gap-4">
         <ActionCard
@@ -164,10 +174,10 @@ export default async function PortalHome() {
           body="Drop in a document or voice memo to add more."
         />
         <ActionCard
-          href="/portal/chat"
-          icon={MessagesSquare}
-          title="Chat"
-          body="Talk with your clone and hear it in your voice."
+          href="/portal/memories"
+          icon={BookOpen}
+          title="Memories"
+          body="Browse what your clone knows, and redact anything."
         />
       </div>
     </div>

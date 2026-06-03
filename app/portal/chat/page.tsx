@@ -11,7 +11,13 @@ import type { CitedMessage } from "./types";
 
 export const dynamic = "force-dynamic";
 
-export default async function ChatPage() {
+export default async function ChatPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
+  const initialDraft = typeof q === "string" && q.trim() ? q : undefined;
   const member = await getCurrentMember();
   const convo = await getOrCreateReflectiveConversation(member.id);
   const msgs = await listMessages(convo.id, { limit: 100 });
@@ -74,7 +80,10 @@ export default async function ChatPage() {
           to feed it more, or Memories to review and redact what it sees.
         </p>
       </header>
-      <ReflectiveChat initialMessages={initialMessages} />
+      <ReflectiveChat
+        initialMessages={initialMessages}
+        initialDraft={initialDraft}
+      />
     </div>
   );
 }
