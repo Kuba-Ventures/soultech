@@ -28,3 +28,6 @@ next-env.d.ts
 
 # runtime data (waitlist submissions — demo only, not for prod)
 /data/waitlist.json
+
+# factory: per-run verdict marker written by the factory-review CI job (never committed)
+.factory-verdict
