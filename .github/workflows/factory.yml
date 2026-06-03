@@ -2,11 +2,15 @@ name: factory
 
 # Supervised PR factory. Every PR runs two checks:
 #   factory-tests  — the Vitest safety net (npm test)
-#   factory-review — the supervised reviewer's verdict (APPROVE-LOWRISK / ESCALATE)
+#   factory-review — the supervised reviewer's verdict, turned into a pass/fail GATE
 #
-# Low-risk PRs auto-merge ONLY after the repo variable FACTORY_AUTOMERGE is set to
-# "true" (Phase 3, after a ~2-week supervised soak with zero escapes). Until then the
-# reviewer posts its verdict and labels the PR, but nothing merges on its own.
+# The gate is GREEN only on an explicit APPROVE-LOWRISK verdict. ESCALATE → red. A review
+# that never ran (the Claude action self-skips on PRs that touch .github/**) → red, fail-closed.
+# So branch protection requiring factory-review means: only low-risk PRs are mergeable without
+# a human; everything else needs an admin to look and override.
+#
+# Auto-merge for the green (low-risk) PRs is still gated behind the repo variable
+# FACTORY_AUTOMERGE (unset = off) and is enabled only after a supervised soak.
 
 on:
   pull_request:
@@ -47,7 +51,7 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           additional_permissions: |
             actions: read
-          claude_args: '--allowed-tools "Read,Grep,Glob,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(gh pr edit:*),Bash(git diff:*),Bash(git fetch:*),Bash(git log:*)"'
+          claude_args: '--allowed-tools "Read,Grep,Glob,Write,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(gh pr edit:*),Bash(git diff:*),Bash(git fetch:*),Bash(git log:*)"'
           prompt: |
             You are the gate for a supervised PR factory. Review pull request
             #${{ github.event.pull_request.number }} in ${{ github.repository }}.
@@ -62,11 +66,32 @@ jobs:
               3. Walk the escalation gates and decide APPROVE-LOWRISK or ESCALATE. When in
                  doubt, ESCALATE — this is a paying client's product.
 
-            Then take exactly these actions:
-              - Post your review as a PR comment, ending with the exact VERDICT line
-                (`VERDICT: APPROVE-LOWRISK` or `VERDICT: ESCALATE — <reason>`).
-              - If APPROVE-LOWRISK: add the label `factory:lowrisk` to the PR.
-              - If ESCALATE: add the label `factory:escalate` to the PR.
+            Then take exactly these actions, IN THIS ORDER:
+              1. FIRST, write your decision as a single bare token to a file named
+                 `.factory-verdict` in the repository root — either `APPROVE-LOWRISK` or
+                 `ESCALATE` and nothing else. This file is how the merge gate is computed, so
+                 write it before anything else.
+              2. Post your review as a PR comment, ending with the exact VERDICT line
+                 (`VERDICT: APPROVE-LOWRISK` or `VERDICT: ESCALATE — <reason>`).
+              3. If APPROVE-LOWRISK: add the label `factory:lowrisk` to the PR.
+                 If ESCALATE: add the label `factory:escalate` to the PR.
 
-            Do NOT merge the PR under any circumstances. Auto-merge is handled separately and
-            is currently disabled.
+            Do NOT merge the PR under any circumstances.
+
+      - name: Compute merge gate (fail-closed)
+        run: |
+          # The gate is satisfied ONLY by an explicit APPROVE-LOWRISK verdict written by the
+          # reviewer during THIS run. The file lives in the ephemeral runner workspace, so a
+          # missing file means the review did not actually run — fail closed.
+          if [ ! -f .factory-verdict ]; then
+            echo "::error::No .factory-verdict written — the reviewer did not run (e.g. a PR that modifies .github/** which the Claude action skips by design). Failing closed; a human admin must review and override."
+            exit 1
+          fi
+          verdict="$(tr -d '[:space:]' < .factory-verdict)"
+          echo "Reviewer verdict: '${verdict}'"
+          if [ "$verdict" = "APPROVE-LOWRISK" ]; then
+            echo "APPROVE-LOWRISK — low-risk gate satisfied; this PR may merge."
+            exit 0
+          fi
+          echo "::error::Verdict is '${verdict}', not APPROVE-LOWRISK — escalated to a human. This PR will not merge without an admin override."
+          exit 1
