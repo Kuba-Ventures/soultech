@@ -8,7 +8,9 @@ import {
   boolean,
   vector,
   integer,
+  real,
   index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 /**
@@ -36,6 +38,21 @@ export const sourceStatusEnum = pgEnum("source_status", [
 export const messageRoleEnum = pgEnum("message_role", ["member", "clone"]);
 
 export const auditActorEnum = pgEnum("audit_actor", ["member", "system"]);
+
+// Soultech v4 (learn-first): a learner's level on a skill track.
+export const trackLevelEnum = pgEnum("track_level", [
+  "beginner",
+  "building",
+  "fluent",
+  "mastering",
+]);
+
+// active = shown on /learn; ghost = empty-state placeholder; archived = hidden.
+export const trackStatusEnum = pgEnum("track_status", [
+  "active",
+  "ghost",
+  "archived",
+]);
 
 export const members = pgTable("members", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -146,6 +163,66 @@ export const auditLog = pgTable(
   }),
 );
 
+/**
+ * Soultech v4 learn-first additions.
+ *
+ * `learning_styles` holds one inferred row per member: the distilled "how you
+ * learn" portrait rendered on /learn (amber card). `tracks` are the skills a
+ * member is leveling up, each with a progress bar and a "next rep" suggestion
+ * written in their learning style (cool-tinted). Both are populated by
+ * inference + the MCP write-back loop in later phases; Phase 1 reads them and
+ * falls back to empty states when absent.
+ */
+export const learningStyles = pgTable("learning_styles", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  memberId: uuid("member_id")
+    .notNull()
+    .unique()
+    .references(() => members.id, { onDelete: "cascade" }),
+  // [{ key, label, value, evidence? }]
+  traits: jsonb("traits").$type<LearningTrait[]>().default([]).notNull(),
+  // memory ids / questionnaire ids the inference drew on
+  inferredFrom: jsonb("inferred_from").$type<string[]>().default([]).notNull(),
+  // prose for the amber "Your learning style, distilled" card
+  summary: text("summary"),
+  modelVersion: text("model_version"),
+  generatedAt: timestamp("generated_at", { withTimezone: true }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const tracks = pgTable(
+  "tracks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    memberId: uuid("member_id")
+      .notNull()
+      .references(() => members.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    level: trackLevelEnum("level").notNull().default("beginner"),
+    // 0..1, drives the progress bar
+    progress: real("progress").notNull().default(0),
+    // "next rep" suggestion, written in the member's learning style
+    nextRep: text("next_rep"),
+    // short "62% · you've shipped working agents, next is reliability" caption
+    progressNote: text("progress_note"),
+    status: trackStatusEnum("status").notNull().default("active"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    memberIdx: index("tracks_member_idx").on(t.memberId),
+    // advance_track(name, ...) resolves by (member, name), so it must be unique.
+    memberNameUnique: uniqueIndex("tracks_member_name_unique").on(t.memberId, t.name),
+  }),
+);
+
+export type LearningTrait = {
+  key: string;
+  label: string;
+  value?: string;
+  evidence?: string;
+};
+
 export type Member = typeof members.$inferSelect;
 export type NewMember = typeof members.$inferInsert;
 export type Source = typeof sources.$inferSelect;
@@ -158,3 +235,7 @@ export type Message = typeof messages.$inferSelect;
 export type NewMessage = typeof messages.$inferInsert;
 export type AuditLogEntry = typeof auditLog.$inferSelect;
 export type NewAuditLogEntry = typeof auditLog.$inferInsert;
+export type LearningStyle = typeof learningStyles.$inferSelect;
+export type NewLearningStyle = typeof learningStyles.$inferInsert;
+export type Track = typeof tracks.$inferSelect;
+export type NewTrack = typeof tracks.$inferInsert;

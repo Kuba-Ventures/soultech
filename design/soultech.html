@@ -1,0 +1,717 @@
+<!-- Soultech v4: learn-first, flywheel, scope, empty states, mobile -->
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Soultech</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..600&family=Hanken+Grotesk:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+<style>
+  :root{
+    --bg:#0b0a08; --bg-2:#100d0a;
+    --surface:rgba(245,238,227,.022); --surface-2:rgba(245,238,227,.045);
+    --line:rgba(245,238,227,.08); --line-2:rgba(245,238,227,.15);
+    --text:#F4EEE3; --t-dim:#a39c8f; --t-faint:#6a645b;
+    --amber:#F0A84C; --amber-soft:#f2bd76;
+    --cool:#79c6d4; --cool-soft:#a4dde7;
+    --ok:#7fc99a; --radius:15px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--text);font-family:"Hanken Grotesk",sans-serif;font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow:hidden}
+  body.state-finley .v-new{display:none}
+  body.state-new .v-finley{display:none}
+  .glow{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(900px 600px at 16% -10%,rgba(240,168,76,.09),transparent 60%),radial-gradient(800px 700px at 95% 6%,rgba(121,198,212,.05),transparent 55%)}
+  .grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.5;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E")}
+  .app{position:relative;z-index:2;display:grid;grid-template-columns:252px 1fr;height:100vh}
+
+  .side{border-right:1px solid var(--line);display:flex;flex-direction:column;padding:22px 16px;background:linear-gradient(180deg,rgba(255,255,255,.012),transparent);overflow-y:auto}
+  .brand{display:flex;align-items:center;gap:10px;padding:6px 8px 14px}
+  .brand .mark{width:26px;height:26px;border-radius:8px;position:relative;background:radial-gradient(circle at 32% 30%,var(--amber),#b66f1f 70%);box-shadow:0 0 18px rgba(240,168,76,.45),inset 0 0 6px rgba(255,255,255,.25)}
+  .brand .mark::after{content:"";position:absolute;right:-3px;bottom:-3px;width:9px;height:9px;border-radius:50%;background:radial-gradient(circle at 35% 30%,var(--cool-soft),#3f8b97);box-shadow:0 0 10px rgba(121,198,212,.7)}
+  .brand b{font-family:"Fraunces";font-weight:500;font-size:18px}
+  .grp{font-family:"IBM Plex Mono";font-size:10.5px;letter-spacing:.16em;color:var(--t-faint);text-transform:uppercase;padding:14px 10px 7px}
+  .nav-item{display:flex;align-items:center;gap:12px;padding:9px 11px;border-radius:11px;color:var(--t-dim);cursor:pointer;font-size:14px;transition:.18s;position:relative;border:1px solid transparent}
+  .nav-item svg{width:17px;height:17px;opacity:.8;flex:none}
+  .nav-item:hover{color:var(--text);background:var(--surface)}
+  .nav-item.active{color:var(--text);background:linear-gradient(90deg,rgba(240,168,76,.13),rgba(240,168,76,.02));border-color:rgba(240,168,76,.18)}
+  .nav-item.active::before{content:"";position:absolute;left:-16px;top:50%;transform:translateY(-50%);width:3px;height:18px;border-radius:0 3px 3px 0;background:var(--amber);box-shadow:0 0 12px var(--amber)}
+  .nav-item .tag{margin-left:auto;font-family:"IBM Plex Mono";font-size:9.5px;color:var(--cool);border:1px solid rgba(121,198,212,.3);padding:1px 6px;border-radius:999px;background:rgba(121,198,212,.06)}
+  .nav-item .tag.amb{color:var(--amber-soft);border-color:rgba(240,168,76,.3);background:rgba(240,168,76,.06)}
+  .side .foot{margin-top:auto;padding-top:14px}
+  .prog{padding:6px 11px 12px}
+  .prog .pl{display:flex;justify-content:space-between;font-family:"IBM Plex Mono";font-size:10.5px;color:var(--t-faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}
+  .prog .pl b{color:var(--amber-soft);font-weight:500}
+  .bar{height:6px;border-radius:99px;background:rgba(245,238,227,.07);overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--amber),var(--amber-soft));box-shadow:0 0 12px rgba(240,168,76,.5);transition:width .8s cubic-bezier(.2,.7,.2,1)}
+  .bar i.cool{background:linear-gradient(90deg,#4f97a6,var(--cool));box-shadow:0 0 12px rgba(121,198,212,.5)}
+  .privacy{margin-top:6px;border:1px solid var(--line);border-radius:12px;padding:11px 12px;background:var(--surface);display:flex;gap:10px;align-items:flex-start}
+  .privacy svg{width:15px;height:15px;color:var(--amber);flex:none;margin-top:2px}
+  .privacy .h{font-size:12.5px;font-weight:600}.privacy .s{font-size:11px;color:var(--t-faint);line-height:1.4;margin-top:2px}
+
+  .main{overflow-y:auto;position:relative}
+  .topbar{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 38px;border-bottom:1px solid var(--line);backdrop-filter:blur(14px);background:rgba(11,10,8,.6)}
+  .crumb{font-family:"IBM Plex Mono";font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--t-faint)}
+  .tbright{display:flex;align-items:center;gap:16px}
+  .seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--surface)}
+  .seg button{font-family:"IBM Plex Mono";font-size:10.5px;padding:6px 11px;background:none;border:none;color:var(--t-dim);cursor:pointer;transition:.16s}
+  .seg button.on{background:rgba(240,168,76,.14);color:var(--amber-soft)}
+  .seg .lbl{padding:6px 0 6px 11px;font-family:"IBM Plex Mono";font-size:9px;letter-spacing:.1em;color:var(--t-faint);text-transform:uppercase;align-self:center}
+  .who{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--t-dim)}
+  .av{width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 32% 30%,var(--amber),#a9651b);display:grid;place-items:center;font-weight:600;font-size:13px;color:#1c1206;box-shadow:0 0 14px rgba(240,168,76,.35)}
+  .wrap{padding:40px 56px 90px;max-width:1060px}
+
+  .screen{display:none}.screen.on{display:block}
+  .screen.on .rise{animation:rise .55s cubic-bezier(.2,.7,.2,1) both}
+  .screen.on .rise:nth-child(2){animation-delay:.05s}.screen.on .rise:nth-child(3){animation-delay:.1s}
+  .screen.on .rise:nth-child(4){animation-delay:.15s}.screen.on .rise:nth-child(5){animation-delay:.2s}
+  @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+  .eyebrow{font-family:"IBM Plex Mono";font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--amber);margin-bottom:14px}
+  .eyebrow.cool{color:var(--cool)}
+  h1.title{font-family:"Fraunces";font-weight:400;font-size:44px;line-height:1.04;letter-spacing:-.4px;margin-bottom:12px}
+  h1.title em{font-style:italic;color:var(--amber-soft)}
+  h1.title em.cool{color:var(--cool-soft)}
+  .lede{color:var(--t-dim);font-size:15.5px;max-width:600px;margin-bottom:28px}
+  .lede a,.navlink{color:var(--cool);text-decoration:none;border-bottom:1px solid rgba(121,198,212,.3);cursor:pointer}
+  .sect{font-family:"IBM Plex Mono";font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--t-faint);margin:32px 0 16px;display:flex;align-items:center;gap:10px}
+  .sect .ln{flex:1;height:1px;background:var(--line)}
+  .btn{border:none;cursor:pointer;border-radius:10px;padding:10px 18px;font-family:"Hanken Grotesk";font-weight:600;font-size:13.5px;background:radial-gradient(circle at 35% 30%,var(--amber),#bd741f);color:#1b1205;box-shadow:0 0 16px rgba(240,168,76,.35);transition:.2s}
+  .btn:hover{filter:brightness(1.07)}
+  .btn.ghost{background:none;border:1px solid var(--line-2);color:var(--text);box-shadow:none}.btn.ghost:hover{border-color:var(--amber);color:var(--amber-soft)}
+  .btn.cool{background:radial-gradient(circle at 35% 30%,var(--cool),#3f8b97);color:#06212a;box-shadow:0 0 16px rgba(121,198,212,.3)}
+
+  /* climbing-curve hero (signature motion) */
+  .chero{position:relative;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:linear-gradient(180deg,rgba(245,238,227,.03),transparent);padding:28px 32px;margin-bottom:8px}
+  .chero .ct{position:relative;z-index:2;max-width:560px}
+  .chero svg.cv{position:absolute;right:0;bottom:0;width:52%;height:108%;opacity:.95;z-index:1}
+  .cv .grid line{stroke:rgba(245,238,227,.05)}
+  .cv .ln{fill:none;stroke:var(--cool);stroke-width:2.5;stroke-linecap:round;filter:drop-shadow(0 0 6px rgba(121,198,212,.55));stroke-dasharray:520;stroke-dashoffset:520;animation:draw 1.7s .25s cubic-bezier(.4,.8,.3,1) forwards}
+  .cv .end{opacity:0;animation:pop .4s 1.7s forwards}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  @keyframes pop{to{opacity:1}}
+
+  .lstyle{border:1px solid rgba(240,168,76,.28);background:linear-gradient(180deg,rgba(240,168,76,.07),rgba(240,168,76,.015));border-radius:var(--radius);padding:22px 24px;margin:20px 0 8px}
+  .lstyle .lab{font-family:"IBM Plex Mono";font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--amber);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .lstyle .lab svg{width:14px;height:14px}
+  .lstyle p{font-family:"Fraunces";font-weight:300;font-size:19px;line-height:1.5}.lstyle p em{font-style:italic;color:var(--amber-soft)}
+  .lstyle .traits{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+  .trait{font-family:"IBM Plex Mono";font-size:11px;color:var(--amber-soft);border:1px solid rgba(240,168,76,.3);padding:4px 11px;border-radius:99px;background:rgba(240,168,76,.05)}
+  .track{border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:12px;background:var(--surface);transition:.18s}
+  .track:hover{border-color:var(--line-2)}
+  .track .th{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .track .tn{font-family:"Fraunces";font-size:18px}
+  .track .lvl{margin-left:auto;font-family:"IBM Plex Mono";font-size:10px;letter-spacing:.06em;color:var(--cool);border:1px solid rgba(121,198,212,.3);padding:3px 9px;border-radius:99px}
+  .track .pctn{font-family:"IBM Plex Mono";font-size:11px;color:var(--t-faint);margin-top:7px}
+  .track .next{margin-top:14px;border-left:2px solid var(--cool);padding:8px 0 8px 13px;font-size:13.5px}
+  .track .next .nl{font-family:"IBM Plex Mono";font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--cool);display:block;margin-bottom:4px}
+  .track .next b{color:var(--cool-soft);font-weight:500}
+  .nextup{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .nu{border:1px solid var(--line);border-radius:13px;padding:15px 17px;background:var(--surface);transition:.16s;cursor:pointer}
+  .nu:hover{border-color:rgba(121,198,212,.3)}
+  .nu .nt{font-weight:600;font-size:14px}.nu .nd{font-size:12.5px;color:var(--t-faint);margin-top:4px}.nu .nw{font-family:"IBM Plex Mono";font-size:10px;color:var(--cool);margin-top:9px}
+
+  /* empty states */
+  .empty{border:1px dashed var(--line-2);border-radius:18px;padding:40px;text-align:center;background:var(--surface);max-width:680px}
+  .empty .ei{width:46px;height:46px;border-radius:13px;margin:0 auto 16px;display:grid;place-items:center;background:rgba(240,168,76,.1);color:var(--amber)}
+  .empty .ei svg{width:22px;height:22px}
+  .empty h3{font-family:"Fraunces";font-weight:400;font-size:23px;margin-bottom:8px}
+  .empty p{color:var(--t-dim);font-size:14px;max-width:420px;margin:0 auto 20px}
+  .empty .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .ghosttrack{border:1px dashed var(--line);border-radius:13px;padding:16px 18px;margin-bottom:10px;max-width:720px;opacity:.5;display:flex;align-items:center;gap:12px;font-family:"IBM Plex Mono";font-size:12px;color:var(--t-faint)}
+
+  /* chat */
+  .thread{display:flex;flex-direction:column;gap:16px;max-width:760px}
+  .a{align-self:flex-end;max-width:74%;border-radius:14px 4px 14px 14px;padding:13px 17px;background:rgba(245,238,227,.05);font-size:14.5px}
+  .a.clone{border:1px solid rgba(121,198,212,.28);background:linear-gradient(180deg,rgba(121,198,212,.07),rgba(121,198,212,.02));align-self:flex-start;max-width:82%;border-radius:4px 14px 14px 14px}
+  .a.clone .lab{font-family:"IBM Plex Mono";font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--cool);margin-bottom:6px}
+  .saved{display:inline-flex;align-items:center;gap:6px;font-family:"IBM Plex Mono";font-size:10.5px;color:var(--ok);border:1px solid rgba(127,201,154,.3);border-radius:8px;padding:4px 9px;margin:9px 6px 0 0;background:rgba(127,201,154,.07)}
+  .saved svg{width:12px;height:12px}.saved b{color:var(--text);font-weight:500}
+  .composer{margin-top:24px;border:1px solid var(--line-2);border-radius:16px;background:var(--surface);padding:15px 17px;max-width:760px}
+  .composer textarea{width:100%;min-height:64px;resize:none;background:none;border:none;outline:none;color:var(--text);font-family:"Hanken Grotesk";font-size:15px}
+  .composer textarea::placeholder{color:var(--t-faint)}
+  .composer .row{display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:12px}
+  .composer .hint{font-family:"IBM Plex Mono";font-size:10.5px;color:var(--t-faint)}
+
+  /* overview */
+  .pcard{display:flex;gap:24px;align-items:center;border:1px solid var(--line);border-radius:20px;padding:26px 28px;background:linear-gradient(180deg,rgba(245,238,227,.03),rgba(245,238,227,.005));margin-bottom:20px}
+  .pcard .big-av{width:74px;height:74px;border-radius:20px;background:radial-gradient(circle at 32% 28%,var(--amber),#a9651b);display:grid;place-items:center;font-family:"Fraunces";font-size:34px;color:#1c1206;box-shadow:0 0 26px rgba(240,168,76,.4);flex:none}
+  .pcard .nm{font-family:"Fraunces";font-size:30px;line-height:1}
+  .pcard .meta{font-family:"IBM Plex Mono";font-size:11.5px;color:var(--t-faint);margin-top:8px}
+  .ring{margin-left:auto;flex:none;position:relative;width:88px;height:88px;display:grid;place-items:center}
+  .ring svg{transform:rotate(-90deg)}
+  .ring circle.fg{transition:stroke-dashoffset 1s cubic-bezier(.2,.7,.2,1)}
+  .ring .pct{position:absolute;font-family:"Fraunces";font-size:21px;color:var(--amber-soft)}
+  .ring .pct small{display:block;font-family:"IBM Plex Mono";font-size:8px;letter-spacing:.1em;color:var(--t-faint);text-align:center;margin-top:1px}
+  .summary{border:1px solid rgba(121,198,212,.25);background:linear-gradient(180deg,rgba(121,198,212,.06),rgba(121,198,212,.015));border-radius:var(--radius);padding:22px 24px}
+  .summary .lab{font-family:"IBM Plex Mono";font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--cool);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .summary .lab svg{width:14px;height:14px}
+  .summary p{font-family:"Fraunces";font-weight:300;font-size:19px;line-height:1.5}.summary p em{font-style:italic;color:var(--amber-soft)}
+  .summary .upd{font-family:"IBM Plex Mono";font-size:10.5px;color:var(--t-faint);margin-top:14px}
+  .facts{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .fact{border:1px solid var(--line);border-radius:13px;padding:15px 16px;background:var(--surface)}
+  .fact .k{font-family:"IBM Plex Mono";font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--t-faint);margin-bottom:6px}
+  .fact .v{font-size:14px;line-height:1.4}
+  .need{border:1px solid var(--line);border-radius:13px;padding:16px 18px;margin-bottom:11px;background:var(--surface);display:flex;align-items:center;gap:16px;transition:.18s}
+  .need:hover{border-color:var(--line-2)}
+  .need .dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--t-faint)}.need.part .dot{background:var(--amber)}
+  .need .nfo{flex:1}.need .nm{font-size:14.5px;font-weight:600}.need .wy{font-size:12.5px;color:var(--t-faint);margin-top:2px}
+  .need .acts{display:flex;gap:8px;flex:none;flex-wrap:wrap;justify-content:flex-end}
+  .mbtn{font-family:"IBM Plex Mono";font-size:11px;padding:6px 12px;border-radius:8px;border:1px solid var(--line-2);color:var(--t-dim);cursor:pointer;background:none;transition:.16s;white-space:nowrap}
+  .mbtn:hover{border-color:var(--amber);color:var(--amber-soft)}
+  .mbtn.go{border-color:rgba(240,168,76,.4);color:var(--amber-soft);background:rgba(240,168,76,.08)}
+
+  /* memory */
+  .filters{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:22px}
+  .chip{font-family:"IBM Plex Mono";font-size:11.5px;padding:6px 13px;border-radius:99px;border:1px solid var(--line);color:var(--t-dim);cursor:pointer;transition:.16s;background:var(--surface)}
+  .chip:hover{border-color:var(--line-2);color:var(--text)}
+  .chip.on{background:rgba(240,168,76,.12);border-color:rgba(240,168,76,.4);color:var(--amber-soft)}
+  .mem{border:1px solid var(--line);border-radius:14px;padding:15px 18px;margin-bottom:11px;background:var(--surface);transition:.2s;max-width:820px}
+  .mem:hover{border-color:var(--line-2)}
+  .mem .meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:10px}
+  .mtype{font-family:"IBM Plex Mono";font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;padding:2px 8px;border-radius:6px;border:1px solid var(--line-2)}
+  .mtype.fact{color:var(--cool);border-color:rgba(121,198,212,.3)}
+  .mtype.plan{color:var(--amber);border-color:rgba(240,168,76,.35)}
+  .mtype.mem{color:var(--t-dim)}
+  .mtype.pref{color:#c7a3e0;border-color:rgba(199,163,224,.35)}
+  .src{font-family:"IBM Plex Mono";font-size:10px;color:var(--t-faint);margin-left:10px}
+  .redact{font-family:"IBM Plex Mono";font-size:10px;color:var(--t-faint);cursor:pointer;border:1px solid var(--line);padding:3px 9px;border-radius:7px;transition:.16s;white-space:nowrap}
+  .redact:hover{color:var(--amber);border-color:rgba(240,168,76,.4)}
+  .mem .body{font-size:14.5px}
+
+  /* sources */
+  .tabs{display:flex;gap:6px;border:1px solid var(--line);border-radius:12px;padding:5px;background:var(--surface);margin-bottom:26px;width:fit-content;flex-wrap:wrap}
+  .tab{font-family:"IBM Plex Mono";font-size:12px;padding:8px 16px;border-radius:8px;color:var(--t-dim);cursor:pointer;transition:.16s}
+  .tab:hover{color:var(--text)}.tab.on{background:rgba(240,168,76,.13);color:var(--amber-soft)}
+  .pane{display:none}.pane.on{display:block}
+  .conn{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
+  .c{border:1px solid var(--line);border-radius:14px;padding:16px;background:var(--surface);display:flex;flex-direction:column;gap:11px;transition:.18s}
+  .c:hover{border-color:var(--line-2);transform:translateY(-2px)}
+  .c .top{display:flex;align-items:center;gap:11px}
+  .c .lg{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font-family:"Fraunces";font-size:16px;color:#0b0a08;flex:none}
+  .c .cn{font-weight:600;font-size:14px}
+  .c .soon{margin-left:auto;font-family:"IBM Plex Mono";font-size:9px;color:var(--t-faint);border:1px solid var(--line);padding:2px 7px;border-radius:6px}
+  .c .te{font-size:12px;color:var(--t-faint);line-height:1.4;flex:1}
+  .c .cta{font-family:"IBM Plex Mono";font-size:11px;padding:7px 0;border-radius:8px;border:1px solid var(--line-2);color:var(--t-dim);cursor:pointer;text-align:center;transition:.16s}
+  .c .cta:hover{border-color:var(--amber);color:var(--amber-soft)}
+  .c.linked{border-color:rgba(127,201,154,.3);background:rgba(127,201,154,.04)}
+  .c.linked .cta{border-color:rgba(127,201,154,.35);color:var(--ok);cursor:default}
+  .c.feat{border-color:rgba(240,168,76,.35);background:linear-gradient(180deg,rgba(240,168,76,.07),rgba(240,168,76,.01))}
+  .c.gated{opacity:.62}
+  .c.gated .cta{border-style:dashed;cursor:default;color:var(--t-faint)}
+  .c.gated .cta:hover{border-color:var(--line-2);color:var(--t-faint)}
+  .consent{font-family:"IBM Plex Mono";font-size:10.5px;color:var(--t-faint);max-width:780px;margin:14px 0 0;line-height:1.6;border-left:2px solid rgba(240,168,76,.3);padding-left:12px}
+
+  .qlist{display:flex;flex-direction:column;gap:11px;max-width:780px}
+  .q{border:1px solid var(--line);border-radius:14px;background:var(--surface);overflow:hidden}
+  .q .qhead{display:flex;align-items:center;gap:14px;padding:16px 18px;cursor:pointer}.q .qhead:hover{background:var(--surface-2)}
+  .qpct{width:38px;height:38px;flex:none;position:relative;display:grid;place-items:center}
+  .qpct svg{transform:rotate(-90deg)}.qpct span{position:absolute;font-family:"IBM Plex Mono";font-size:9px;color:var(--t-dim)}
+  .q .qn{flex:1}.q .qt{font-weight:600;font-size:14.5px}.q .qs{font-family:"IBM Plex Mono";font-size:10.5px;color:var(--t-faint);margin-top:2px}
+  .q .qcta{font-family:"IBM Plex Mono";font-size:11px;color:var(--amber-soft)}
+  .qbody{display:none;padding:4px 20px 22px;border-top:1px solid var(--line)}.qbody.open{display:block;animation:rise .4s ease both}
+  .field{margin-top:16px}
+  .field label{display:block;font-family:"IBM Plex Mono";font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--t-dim);margin-bottom:7px}
+  .field input{width:100%;background:rgba(11,10,8,.5);border:1px solid var(--line-2);border-radius:10px;padding:11px 13px;color:var(--text);font-family:"Hanken Grotesk";font-size:14px;outline:none;transition:.16s}
+  .field input:focus{border-color:rgba(240,168,76,.4);box-shadow:0 0 0 3px rgba(240,168,76,.06)}
+  .field input::placeholder{color:var(--t-faint)}
+  .pills{display:flex;gap:8px;flex-wrap:wrap}
+  .pill{font-family:"IBM Plex Mono";font-size:12px;padding:8px 14px;border-radius:99px;border:1px solid var(--line-2);color:var(--t-dim);cursor:pointer;transition:.16s;background:none}
+  .pill:hover{color:var(--text)}.pill.on{background:rgba(240,168,76,.13);border-color:rgba(240,168,76,.4);color:var(--amber-soft)}
+  .qbody .save-row{margin-top:20px;display:flex;justify-content:flex-end}
+  .drop{border:1.5px dashed var(--line-2);border-radius:18px;padding:38px;text-align:center;background:var(--surface);transition:.2s;cursor:pointer;max-width:780px}
+  .drop:hover{border-color:rgba(240,168,76,.45);background:var(--surface-2)}
+  .drop .big{font-family:"Fraunces";font-size:19px}.drop .types{font-family:"IBM Plex Mono";font-size:11px;color:var(--t-faint);margin-top:8px}
+  .ideas{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-top:20px;max-width:780px}
+  .idea{border:1px solid var(--line);border-radius:12px;padding:13px 15px;background:var(--surface);font-size:13px;display:flex;gap:10px;align-items:center;transition:.16s;cursor:pointer}
+  .idea:hover{border-color:var(--line-2)}.idea svg{width:15px;height:15px;color:var(--amber);flex:none}
+
+  /* plug in / flywheel */
+  .mcp{border:1px solid rgba(121,198,212,.3);background:linear-gradient(180deg,rgba(121,198,212,.06),rgba(121,198,212,.015));border-radius:18px;padding:24px 26px;margin-bottom:8px}
+  .mcp .lab{font-family:"IBM Plex Mono";font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--cool);margin-bottom:12px}
+  .mcp h3{font-family:"Fraunces";font-weight:400;font-size:22px;margin-bottom:6px}
+  .mcp .d{color:var(--t-dim);font-size:14px;max-width:560px;margin-bottom:18px}
+  .urlbox{display:flex;align-items:center;gap:10px;border:1px solid var(--line-2);border-radius:11px;background:rgba(11,10,8,.55);padding:11px 13px;max-width:620px}
+  .urlbox code{font-family:"IBM Plex Mono";font-size:13px;color:var(--cool-soft);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .urlbox .cp{font-family:"IBM Plex Mono";font-size:11px;padding:6px 13px;border-radius:8px;border:1px solid rgba(121,198,212,.35);color:var(--cool);background:rgba(121,198,212,.06);cursor:pointer;transition:.16s;white-space:nowrap}
+  .urlbox .cp:hover{background:rgba(121,198,212,.14)}
+
+  .fwwrap{display:grid;grid-template-columns:340px 1fr;gap:30px;align-items:center;border:1px solid var(--line);border-radius:18px;padding:26px 30px;background:var(--surface);margin-bottom:8px}
+  .flywheel{position:relative;width:300px;height:300px;margin:0 auto}
+  .fw-ring{position:absolute;inset:34px;border:1px dashed var(--line-2);border-radius:50%}
+  .fw-spin{position:absolute;inset:34px;animation:spin 7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .fw-spin .pulse{position:absolute;top:-7px;left:50%;width:13px;height:13px;border-radius:50%;background:var(--cool);transform:translateX(-50%);box-shadow:0 0 16px var(--cool)}
+  .fw-node{position:absolute;width:118px;text-align:center;transform:translate(-50%,-50%)}
+  .fw-node .nd{width:46px;height:46px;border-radius:13px;margin:0 auto 8px;display:grid;place-items:center;border:1px solid var(--line-2);background:var(--bg-2)}
+  .fw-node .nd svg{width:21px;height:21px}
+  .fw-node .nt{font-family:"IBM Plex Mono";font-size:10px;letter-spacing:.05em;color:var(--t-dim);line-height:1.4}
+  .fw-node.n1{top:6%;left:50%}.fw-node.n1 .nd{color:var(--amber);border-color:rgba(240,168,76,.4)}
+  .fw-node.n2{top:74%;left:88%}.fw-node.n2 .nd{color:var(--cool)}
+  .fw-node.n3{top:74%;left:12%}.fw-node.n3 .nd{color:var(--ok)}
+  .fw-center{position:absolute;inset:0;display:grid;place-items:center;text-align:center;pointer-events:none}
+  .fw-center b{font-family:"Fraunces";font-size:16px;color:var(--text)}
+  .fwtext h3{font-family:"Fraunces";font-weight:400;font-size:24px;margin-bottom:10px}
+  .fwtext h3 em{font-style:italic;color:var(--cool-soft)}
+  .fwtext p{color:var(--t-dim);font-size:14px;margin-bottom:18px}
+
+  .travels{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+  .tv{font-family:"IBM Plex Mono";font-size:11px;color:var(--t-dim);border:1px solid var(--line);padding:5px 11px;border-radius:8px;background:var(--surface);display:flex;align-items:center;gap:7px}
+  .tv svg{width:12px;height:12px;color:var(--ok)}
+
+  /* scope matrix */
+  .mxwrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;max-width:820px}
+  .matrix{min-width:580px;width:100%;border-collapse:collapse}
+  .matrix th,.matrix td{padding:13px 14px;text-align:center;border-top:1px solid var(--line)}
+  .matrix thead th{border-top:none;font-family:"IBM Plex Mono";font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--t-dim);background:var(--surface);font-weight:400}
+  .matrix tbody th{text-align:left;font-weight:500;font-size:13.5px;color:var(--text)}
+  .matrix tbody th small{display:block;font-family:"IBM Plex Mono";font-size:10px;color:var(--t-faint);font-weight:400;margin-top:2px}
+  .sw{width:36px;height:21px;border-radius:99px;background:rgba(245,238,227,.12);position:relative;cursor:pointer;transition:.18s;margin:0 auto;display:block}
+  .sw::after{content:"";position:absolute;top:2.5px;left:2.5px;width:16px;height:16px;border-radius:50%;background:var(--t-dim);transition:.18s}
+  .sw.on{background:rgba(240,168,76,.4)}.sw.on::after{left:17.5px;background:var(--amber)}
+  .sw.lock{opacity:.4;cursor:not-allowed;background:rgba(245,238,227,.06)}
+
+  .usequote{border:1px solid var(--line);border-radius:13px;padding:16px 18px;background:var(--surface);max-width:760px}
+  .usequote .ic{font-family:"IBM Plex Mono";font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--t-faint);margin-bottom:8px}
+  .usequote .uin{font-family:"IBM Plex Mono";font-size:13.5px;color:var(--text)}
+  .usequote .uout{font-size:14px;color:var(--t-dim);margin-top:10px;border-left:2px solid var(--cool);padding-left:13px;line-height:1.5}
+  .usequote .uout b{color:var(--cool-soft);font-weight:500}
+
+  /* settings */
+  .panel{border:1px solid var(--line);border-radius:var(--radius);padding:24px;background:var(--surface);max-width:820px;margin-bottom:16px}
+  .panel.warnote{border-color:rgba(240,168,76,.25);background:linear-gradient(180deg,rgba(240,168,76,.05),transparent)}
+  .kv{display:grid;grid-template-columns:1fr 1fr;gap:20px 40px}
+  .kv .k{font-family:"IBM Plex Mono";font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--t-faint);margin-bottom:4px}
+  .kv .v{font-size:15px}
+  .panel h3{font-family:"Fraunces";font-weight:500;font-size:19px;margin-bottom:6px}
+  .panel .pp{color:var(--t-dim);font-size:13.5px;margin-bottom:18px;max-width:560px}
+  .own{display:flex;gap:12px;flex-wrap:wrap}
+  .own .o{flex:1;min-width:200px;border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:rgba(11,10,8,.4)}
+  .own .o .h{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13.5px}
+  .own .o .h svg{width:15px;height:15px;color:var(--amber)}
+  .own .o .s{font-size:12px;color:var(--t-faint);margin-top:6px;line-height:1.45}
+  .footnote{margin-top:36px;font-family:"IBM Plex Mono";font-size:11px;color:var(--t-faint);max-width:760px;border-top:1px solid var(--line);padding-top:16px}
+
+  /* toast */
+  .toast{position:fixed;left:50%;bottom:30px;transform:translate(-50%,20px);opacity:0;background:rgba(16,13,10,.97);border:1px solid rgba(121,198,212,.45);border-radius:12px;padding:13px 18px;font-size:13px;z-index:60;transition:.32s cubic-bezier(.2,.7,.2,1);box-shadow:0 14px 50px rgba(0,0,0,.55);display:flex;gap:11px;align-items:center;max-width:90vw}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .toast .ti{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:rgba(121,198,212,.15);color:var(--cool);flex:none}
+  .toast .ti svg{width:15px;height:15px}
+  .toast b{color:var(--cool-soft)}
+
+  ::-webkit-scrollbar{width:11px;height:11px}::-webkit-scrollbar-thumb{background:rgba(245,238,227,.1);border-radius:99px;border:3px solid var(--bg)}
+
+  /* ============ MOBILE ============ */
+  @media(max-width:860px){
+    body{overflow:auto}
+    .app{grid-template-columns:1fr;height:auto;min-height:100vh}
+    .side{position:fixed;bottom:0;left:0;right:0;top:auto;flex-direction:row;height:62px;padding:0 6px;border-right:none;border-top:1px solid var(--line);overflow-x:auto;overflow-y:hidden;z-index:30;background:rgba(11,10,8,.96);backdrop-filter:blur(12px);gap:2px}
+    .side .brand,.side .grp,.side .foot{display:none}
+    .nav-item{flex-direction:column;gap:3px;font-size:9px;padding:9px 11px;border-radius:10px;white-space:nowrap;flex:none}
+    .nav-item .tag{display:none}
+    .nav-item.active::before{display:none}
+    .nav-item svg{width:20px;height:20px}
+    .main{height:auto;overflow:visible}
+    .topbar{padding:13px 18px}
+    .wrap{padding:28px 18px 96px}
+    h1.title{font-size:33px}
+    .seg .lbl{display:none}
+    .facts,.conn,.nextup,.ideas{grid-template-columns:1fr}
+    .pcard{flex-wrap:wrap;gap:16px}
+    .pcard .ring{margin:0}
+    .fwwrap{grid-template-columns:1fr;gap:18px}
+    .need{flex-wrap:wrap}
+    .need .acts{width:100%;justify-content:flex-start}
+    .who{font-size:0;gap:0}
+  }
+</style>
+
+<div class="glow"></div><div class="grain"></div>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><span class="mark"></span><b>Soultech</b></div>
+
+    <div class="grp">Accelerate</div>
+    <div class="nav-item active" data-screen="learn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 17l5-5 4 4 8-9"/><path d="M16 7h4v4"/></svg>Learn<span class="tag amb">core</span></div>
+    <div class="nav-item" data-screen="plugin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 7V3M15 7V3M8 7h8v4a4 4 0 0 1-8 0zM12 15v6"/></svg>Plug in<span class="tag">new</span></div>
+
+    <div class="grp">Talk</div>
+    <div class="nav-item" data-screen="chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>Chat</div>
+
+    <div class="grp">Your profile</div>
+    <div class="nav-item" data-screen="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Overview</div>
+    <div class="nav-item" data-screen="memory"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 12l4-2M12 12v4"/></svg>Memory</div>
+    <div class="nav-item" data-screen="sources"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v8M9 8l3 3 3-3M5 21h14v-6H5z"/></svg>Sources</div>
+
+    <div class="grp">Account</div>
+    <div class="nav-item" data-screen="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1a7 7 0 0 0-1.7-1l-.4-2.6H10l-.4 2.6a7 7 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.5a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.4-1a7 7 0 0 0 1.7 1l.4 2.6h4l.4-2.6a7 7 0 0 0 1.7-1l2.4 1 2-3.4-2-1.5a7 7 0 0 0 .1-1z"/></svg>Settings</div>
+
+    <div class="foot">
+      <div class="prog"><div class="pl"><span>Profile</span><b id="plabel">38%</b></div><div class="bar"><i id="pbar" style="width:38%"></i></div></div>
+      <div class="privacy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><div><div class="h">Yours alone</div><div class="s">Encrypted, owned by you. You set what each tool sees.</div></div></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="crumb" id="crumb">Learn · Accelerate</div>
+      <div class="tbright">
+        <div class="seg"><span class="lbl">View</span><button class="on" data-view="finley">Finley</button><button data-view="new">New user</button></div>
+        <div class="who">finley@qsbsrollover.com <span class="av">F</span></div>
+      </div>
+    </div>
+    <div class="wrap">
+
+      <!-- ====== LEARN (front door) ====== -->
+      <section class="screen on" id="learn">
+        <div class="eyebrow rise">Accelerate</div>
+        <div class="chero rise">
+          <svg class="cv" viewBox="0 0 320 200" preserveAspectRatio="none">
+            <g class="grid"><line x1="0" y1="50" x2="320" y2="50"/><line x1="0" y1="100" x2="320" y2="100"/><line x1="0" y1="150" x2="320" y2="150"/></g>
+            <path class="ln" d="M8,184 C 70,178 110,150 150,120 S 240,55 312,18"/>
+            <circle class="end" cx="312" cy="18" r="6" fill="var(--cool)" style="filter:drop-shadow(0 0 8px var(--cool))"/>
+          </svg>
+          <div class="ct">
+            <h1 class="title" style="font-size:42px">Climb the curve <em>as you.</em></h1>
+            <div class="lede" style="margin-bottom:0">The whole point of Soultech. Your clone learns how <em style="font-style:italic;color:var(--amber-soft)">you</em> learn, then feeds you the next rep in that style, inside the tools where you already work.</div>
+          </div>
+        </div>
+
+        <!-- FINLEY state -->
+        <div class="v-finley">
+          <div class="lstyle rise">
+            <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7l9-4 9 4-9 4-9-4zM7 10v5c0 1.5 2.7 3 5 3s5-1.5 5-3v-5"/></svg>Your learning style, distilled</div>
+            <p>You learn <em>by building, not reading</em>. You reach for a project before a tutorial and figure it out in the doing. You go deep on one thing at a time, delegate the rest, and you're sharpest in the morning. So I won't hand you docs. I'll hand you the next thing to build.</p>
+            <div class="traits"><span class="trait">Hands-on first</span><span class="trait">Single-threaded depth</span><span class="trait">Morning peak</span><span class="trait">Learns by teaching agents</span></div>
+          </div>
+
+          <div class="sect">What you're leveling up<span class="ln"></span></div>
+          <div class="rise">
+            <div class="track">
+              <div class="th"><span class="tn">Claude subagents &amp; orchestration</span><span class="lvl">Intermediate</span></div>
+              <div class="bar"><i class="cool" id="trk1" style="width:62%"></i></div><div class="pctn" id="trk1c">62% · you've shipped working agents, next is reliability</div>
+              <div class="next"><span class="nl">Your clone suggests, built for how you learn</span>Skip the orchestration write-up. <b>Scaffold a 3-agent pipeline that hands off state, break it on purpose, then have me review where it failed.</b> 25 min, this morning.</div>
+            </div>
+            <div class="track">
+              <div class="th"><span class="tn">Cursor + terminal workflows</span><span class="lvl">Advanced</span></div>
+              <div class="bar"><i class="cool" style="width:80%"></i></div><div class="pctn">80% · strong, gap is reusable prompt structure</div>
+              <div class="next"><span class="nl">Your clone suggests</span>You keep rewriting prompts from scratch. <b>Turn your last 3 Cursor sessions into one reusable project prompt, and I'll diff your phrasings and pull out the pattern.</b></div>
+            </div>
+            <div class="track">
+              <div class="th"><span class="tn">QSBS &amp; rollover structuring</span><span class="lvl">Beginner</span></div>
+              <div class="bar"><i class="cool" style="width:24%"></i></div><div class="pctn">24% · new track, picked up from your notes</div>
+              <div class="next"><span class="nl">Your clone suggests</span>You learn by doing, so <b>map your own cap-table scenario and I'll quiz you on the 5-year and $75M tests until they're reflex.</b></div>
+            </div>
+          </div>
+
+          <div class="sect">What to learn next<span class="ln"></span></div>
+          <div class="nextup rise">
+            <div class="nu"><div class="nt">MCP server design</div><div class="nd">You build agents all day, so owning the protocol underneath is the natural next rung.</div><div class="nw">↳ because you're deep in Claude subagents</div></div>
+            <div class="nu"><div class="nt">Eval-driven development</div><div class="nd">The reliability gap in your agent track points straight here.</div><div class="nw">↳ closes your current 62% track</div></div>
+          </div>
+          <div style="margin-top:22px" class="rise"><button class="btn cool" data-screen="plugin">Turn this on inside Claude &amp; Cursor →</button></div>
+        </div>
+
+        <!-- NEW state -->
+        <div class="v-new">
+          <div class="empty rise" style="margin:20px 0 26px">
+            <div class="ei"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7l9-4 9 4-9 4-9-4zM7 10v5c0 1.5 2.7 3 5 3s5-1.5 5-3v-5"/></svg></div>
+            <h3>I don't know how you learn yet.</h3>
+            <p>Give me two minutes or one connection, and I'll work out how you learn best, then start building tracks around it.</p>
+            <div class="row"><button class="btn" data-screen="sources">Take the 2-min style quiz</button><button class="btn ghost" data-screen="sources">Connect a tool</button></div>
+          </div>
+          <div class="sect">Your tracks will appear here<span class="ln"></span></div>
+          <div class="rise">
+            <div class="ghosttrack"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/></svg>A skill you're working on, with the next rep tuned to you</div>
+            <div class="ghosttrack"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/></svg>Another, picked up from what you connect</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====== PLUG IN (write-back flywheel) ====== -->
+      <section class="screen" id="plugin">
+        <div class="eyebrow cool rise">Plug in</div>
+        <h1 class="title rise">Your tools don't just read you. <em class="cool">They teach you back.</em></h1>
+        <div class="lede rise">Plug your clone into the tools where you actually work. They answer with your context, and every session writes new memories back, so the next one is sharper. That loop is the part nobody else has.</div>
+
+        <div class="fwwrap rise">
+          <div class="flywheel">
+            <div class="fw-ring"></div>
+            <div class="fw-spin"><div class="pulse"></div></div>
+            <div class="fw-center"><b>The loop</b></div>
+            <div class="fw-node n1"><div class="nd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 7V3M15 7V3M8 7h8v4a4 4 0 0 1-8 0z"/><path d="M12 15v6"/></svg></div><div class="nt">You work in<br>Claude &amp; Cursor</div></div>
+            <div class="fw-node n2"><div class="nd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg></div><div class="nt">New memory<br>written back</div></div>
+            <div class="fw-node n3"><div class="nd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 17l5-5 4 4 7-8"/></svg></div><div class="nt">Your learning<br>ticks up</div></div>
+          </div>
+          <div class="fwtext">
+            <h3>Watch a memory <em>close the loop.</em></h3>
+            <p>You ship something in Claude. Soultech captures what it taught the model about you, files it as a memory, and nudges the matching learning track forward, automatically.</p>
+            <button class="btn cool" id="loopbtn">▶ Watch a memory flow</button>
+          </div>
+        </div>
+
+        <div class="sect">Your clone as a connector (MCP)<span class="ln"></span></div>
+        <div class="mcp rise">
+          <div class="lab">◆ One endpoint, every tool that speaks MCP</div>
+          <h3>Add it once. It reads what you allow and writes back as you work.</h3>
+          <div class="d">Drop this into Claude, Claude Code, Cursor, or anything with connector support. Limitless exposed an MCP URL too, but theirs only let tools read. Yours is two-way.</div>
+          <div class="urlbox"><code>https://mcp.soultech.ai/u/finley/sse?key=••••••••3f2a</code><span class="cp">Copy</span></div>
+          <div class="travels"><span class="tv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l4 4 10-10"/></svg>Reads: facts, plans, learning style, voice</span><span class="tv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l4 4 10-10"/></svg>Writes: new memories, track progress</span></div>
+        </div>
+
+        <div class="sect">Plug into<span class="ln"></span></div>
+        <div class="conn rise">
+          <div class="c feat"><div class="top"><span class="lg" style="background:#d97a4a">C</span><span class="cn">Claude</span></div><span class="te">Answers with your context and learns you back.</span><span class="cta">Add to Claude</span></div>
+          <div class="c"><div class="top"><span class="lg" style="background:#7a8a99">⌘</span><span class="cn">Claude Code / Cursor</span></div><span class="te">Your terminal and editor know your stack and prompts.</span><span class="cta">Connect</span></div>
+          <div class="c"><div class="top"><span class="lg" style="background:#5fbd8a">O</span><span class="cn">ChatGPT</span></div><span class="te">Carry your profile in via custom connector.</span><span class="cta">Connect</span></div>
+          <div class="c"><div class="top"><span class="lg" style="background:#cfcfcf">N</span><span class="cn">Notion</span></div><span class="te">Drafts written in your voice.</span><span class="cta">Connect</span></div>
+          <div class="c"><div class="top"><span class="lg" style="background:#7a5fd4">R</span><span class="cn">Raycast</span></div><span class="te">Summon your clone from anywhere on the Mac.</span><span class="cta">Connect</span></div>
+          <div class="c"><div class="top"><span class="lg" style="background:#4aa6c9">{ }</span><span class="cn">API / webhook</span></div><span class="te">Build your own surface on top of you.</span><span class="cta">Get keys</span></div>
+        </div>
+
+        <div class="sect">What each tool can see and write<span class="ln"></span></div>
+        <div class="mxwrap rise">
+          <table class="matrix">
+            <thead><tr><th></th><th>Claude</th><th>Cursor</th><th>ChatGPT</th><th>Notion</th></tr></thead>
+            <tbody>
+              <tr><th>Facts &amp; plans</th><td><span class="sw on"></span></td><td><span class="sw on"></span></td><td><span class="sw"></span></td><td><span class="sw on"></span></td></tr>
+              <tr><th>Learning style<small>powers acceleration</small></th><td><span class="sw on"></span></td><td><span class="sw on"></span></td><td><span class="sw"></span></td><td><span class="sw"></span></td></tr>
+              <tr><th>Your voice &amp; tone</th><td><span class="sw on"></span></td><td><span class="sw"></span></td><td><span class="sw"></span></td><td><span class="sw on"></span></td></tr>
+              <tr><th>Raw memories</th><td><span class="sw on"></span></td><td><span class="sw"></span></td><td><span class="sw"></span></td><td><span class="sw"></span></td></tr>
+              <tr><th>Write back to my brain<small>two-way sync</small></th><td><span class="sw on"></span></td><td><span class="sw on"></span></td><td><span class="sw"></span></td><td><span class="sw"></span></td></tr>
+              <tr><th>Sensitive data<small>health, money, location</small></th><td><span class="sw lock"></span></td><td><span class="sw lock"></span></td><td><span class="sw lock"></span></td><td><span class="sw lock"></span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="consent rise">Sensitive categories stay locked until you turn them on per tool. Nothing in this row leaves your brain by default.</div>
+
+        <div class="sect">What it feels like<span class="ln"></span></div>
+        <div class="usequote rise">
+          <div class="ic">In Claude, with Soultech connected</div>
+          <div class="uin">@soultech, what should I learn next to get my agent setup reliable?</div>
+          <div class="uout">Pulling from your profile: you're at 62% on Claude orchestration and you learn by building. <b>Don't read about evals: scaffold a 3-agent pipeline, break it, and write one eval that catches the break.</b> Want me to draft the harness in your usual Cursor structure?</div>
+        </div>
+      </section>
+
+      <!-- ====== CHAT ====== -->
+      <section class="screen" id="chat">
+        <div class="eyebrow rise">Chat</div>
+        <h1 class="title rise">Talk to <em>yourself.</em></h1>
+        <div class="lede rise">A version of you that remembers the important stuff (plans, decisions, the detail you mentioned once) and saves it automatically.</div>
+        <div class="v-finley">
+          <div class="thread rise">
+            <div class="a">I want to take 3 weeks in the fall to travel, somewhere I can still work mornings. Help me think it through.</div>
+            <div class="a clone"><div class="lab">You · your clone</div>That fits you: clear the overhead, go see the world. For a working trip you'll want strong wifi and a timezone you can overlap with mornings. Portugal or Mexico City both work. Want me to rough out a "work AM, explore PM" shape?
+              <div><span class="saved"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l4 4 10-10"/></svg><b>Plan saved</b> · 3-week fall trip</span><span class="saved"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l4 4 10-10"/></svg><b>Preference saved</b> · wifi + AM timezone</span></div>
+            </div>
+            <div class="a">Yeah. Also remember my passport expires in January.</div>
+            <div class="a clone"><div class="lab">You · your clone</div>Got it, I'll flag it before you book. A January expiry is too close for fall entry rules.
+              <div><span class="saved"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l4 4 10-10"/></svg><b>Fact saved</b> · passport expires Jan 2027</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="v-new">
+          <div class="empty rise">
+            <div class="ei"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg></div>
+            <h3>Say something worth keeping.</h3>
+            <p>I'm thin on context right now, so I'll mostly ask questions back. The more you tell me, the more I sound like you.</p>
+            <div class="row"><button class="btn" data-screen="sources">Add a few sources first</button></div>
+          </div>
+        </div>
+        <div class="composer rise"><textarea placeholder="Say anything, I'll keep what matters…"></textarea><div class="row"><span class="hint">Plans, facts, and decisions save to Memory automatically.</span><button class="btn">Send</button></div></div>
+      </section>
+
+      <!-- ====== OVERVIEW ====== -->
+      <section class="screen" id="overview">
+        <div class="eyebrow rise">Overview</div>
+        <div class="pcard rise">
+          <div class="big-av">F</div>
+          <div><div class="nm">Finley Underwood</div><div class="meta">Building since May 21, 2026 · <span id="ometa">10 things learned · plugged into 1 tool</span></div></div>
+          <div class="ring"><svg width="88" height="88"><circle cx="44" cy="44" r="38" fill="none" stroke="rgba(245,238,227,.08)" stroke-width="6"/><circle id="oring" class="fg" cx="44" cy="44" r="38" fill="none" stroke="var(--amber)" stroke-width="6" stroke-linecap="round" stroke-dasharray="239" stroke-dashoffset="148" style="filter:drop-shadow(0 0 6px rgba(240,168,76,.6))"/></svg><div class="pct"><span id="opct">38%</span><small>KNOWN</small></div></div>
+        </div>
+        <div class="v-finley">
+          <div class="summary rise">
+            <div class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 8v5l3 2"/></svg>Who I think you are, so far</div>
+            <p>You're a <em>builder</em> who learns by making things: Claude agents, Drive integrations, Cursor workflows. You clear overhead so you can buy back time to <em>travel and see the world</em>. Direct, a little skeptical of people, and faster up any curve when you can build your way through it.</p>
+            <div class="upd">↻ Rewrites itself every time you teach me something new.</div>
+          </div>
+          <div class="sect">What I know<span class="ln"></span></div>
+          <div class="facts rise">
+            <div class="fact"><div class="k">Focus right now</div><div class="v">Claude subagents, Drive integrations, Cursor prompts</div></div>
+            <div class="fact"><div class="k">How you learn</div><div class="v">By building first, mornings, deep on one thing</div></div>
+            <div class="fact"><div class="k">Wants</div><div class="v">Travel, bucket list, perspective</div></div>
+            <div class="fact"><div class="k">Working style</div><div class="v">Delegates to agents, clears overhead</div></div>
+            <div class="fact"><div class="k">Worldview</div><div class="v">Earned skepticism about people</div></div>
+            <div class="fact"><div class="k">Communication</div><div class="v">Clipped, direct, no fluff</div></div>
+          </div>
+        </div>
+        <div class="v-new">
+          <div class="summary rise" style="border-color:var(--line);background:var(--surface)">
+            <div class="lab" style="color:var(--t-faint)">Who I think you are, so far</div>
+            <p style="color:var(--t-dim)">Nothing yet. I'm a blank slate. Teach me through a connection, a quick form, or a chat, and this fills in as a portrait of you.</p>
+          </div>
+        </div>
+        <div class="sect">To really know you, I still need<span class="ln"></span></div>
+        <div class="rise">
+          <div class="need part"><span class="dot"></span><div class="nfo"><div class="nm">Your schedule &amp; routines</div><div class="wy">When you actually work, rest, and move.</div></div><div class="acts"><button class="mbtn go" data-screen="sources">Connect calendar</button></div></div>
+          <div class="need part"><span class="dot"></span><div class="nfo"><div class="nm">How you learn best</div><div class="wy">So I can pace the acceleration to you.</div></div><div class="acts"><button class="mbtn" data-screen="learn">See Learn</button><button class="mbtn" data-screen="sources">2-min form</button></div></div>
+          <div class="need"><span class="dot"></span><div class="nfo"><div class="nm">Your taste</div><div class="wy">Music, film, books, the texture of you.</div></div><div class="acts"><button class="mbtn" data-screen="sources">Connect Spotify</button></div></div>
+          <div class="need"><span class="dot"></span><div class="nfo"><div class="nm">How you write</div><div class="wy">So your clone sounds like you everywhere.</div></div><div class="acts"><button class="mbtn" data-screen="sources">Connect Gmail</button></div></div>
+        </div>
+      </section>
+
+      <!-- ====== MEMORY ====== -->
+      <section class="screen" id="memory">
+        <div class="eyebrow rise">Memory</div>
+        <h1 class="title rise">Everything <em>saved about you.</em></h1>
+        <div class="lede rise" style="margin-bottom:22px">Facts, plans, and memories the clone draws on. Redact anything and it forgets.</div>
+        <div class="v-finley">
+          <div class="filters rise"><span class="chip on">All</span><span class="chip">Facts</span><span class="chip">Plans</span><span class="chip">Memories</span><span class="chip">Preferences</span></div>
+          <div class="rise">
+            <div class="mem"><div class="meta"><span><span class="mtype fact">Fact</span><span class="src">from Chat · just now</span></span><span class="redact">Redact</span></div><div class="body">Passport expires January 2027.</div></div>
+            <div class="mem"><div class="meta"><span><span class="mtype plan">Plan</span><span class="src">from Chat · just now</span></span><span class="redact">Redact</span></div><div class="body">3-week trip in the fall: work mornings, explore afternoons. Needs wifi + timezone overlap.</div></div>
+            <div class="mem"><div class="meta"><span><span class="mtype fact">Fact</span><span class="src">from Reflect · May 21</span></span><span class="redact">Redact</span></div><div class="body">Building personal-organization apps with Claude subagents and Drive integrations.</div></div>
+            <div class="mem"><div class="meta"><span><span class="mtype pref">Learning</span><span class="src">inferred · May 21</span></span><span class="redact">Redact</span></div><div class="body">Learns by building before reading, sharpest in the mornings.</div></div>
+            <div class="mem"><div class="meta"><span><span class="mtype mem">Memory</span><span class="src">from Reflect · May 21</span></span><span class="redact">Redact</span></div><div class="body">Believes seeing the world teaches people who they are and where they come from.</div></div>
+          </div>
+        </div>
+        <div class="v-new">
+          <div class="empty rise">
+            <div class="ei"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 12l4-2M12 12v4"/></svg></div>
+            <h3>Nothing saved yet.</h3>
+            <p>Chat with your clone or connect a source, and the facts, plans, and memories it learns about you show up here, each one editable and removable.</p>
+            <div class="row"><button class="btn" data-screen="sources">Add a source</button><button class="btn ghost" data-screen="chat">Start a chat</button></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====== SOURCES ====== -->
+      <section class="screen" id="sources">
+        <div class="eyebrow rise">Sources</div>
+        <h1 class="title rise">Here's how I <em>learn you.</em></h1>
+        <div class="lede rise">Three ways in: connect what you already use, answer a few short questions, or drop in anything personal.</div>
+        <div class="tabs rise"><span class="tab on" data-pane="connect">Connections</span><span class="tab" data-pane="forms">Questionnaires</span><span class="tab" data-pane="upl">Uploads</span></div>
+        <div class="pane on" id="connect">
+          <div class="conn rise">
+            <div class="c linked"><div class="top"><span class="lg" style="background:#5b9bd5">D</span><span class="cn">Google Drive</span></div><span class="te">Your work, docs, how you organize knowledge.</span><span class="cta">✓ Connected</span></div>
+            <div class="c"><div class="top"><span class="lg" style="background:#e6705a">C</span><span class="cn">Calendar</span></div><span class="te">When you work, rest, and move.</span><span class="cta">Connect</span></div>
+            <div class="c"><div class="top"><span class="lg" style="background:#d96a4a">G</span><span class="cn">Gmail</span></div><span class="te">How you write and who matters.</span><span class="cta">Connect</span></div>
+            <div class="c"><div class="top"><span class="lg" style="background:#5fbd6a">S</span><span class="cn">Spotify</span></div><span class="te">Your taste and the moods behind it.</span><span class="cta">Connect</span></div>
+            <div class="c"><div class="top"><span class="lg" style="background:#6a8fd4">L</span><span class="cn">LinkedIn</span></div><span class="te">Your story and the arc so far.</span><span class="cta">Connect</span></div>
+            <div class="c"><div class="top"><span class="lg" style="background:#a86fd1">M</span><span class="cn">Letterboxd &amp; Goodreads</span></div><span class="te">Films and books, your inner library.</span><span class="cta">Connect</span></div>
+          </div>
+          <div class="sect" style="margin-top:26px">Sensitive, off by default<span class="ln"></span></div>
+          <div class="conn rise">
+            <div class="c gated"><div class="top"><span class="lg" style="background:#e84d6b">H</span><span class="cn">Apple Health / Oura</span><span class="soon">Consent</span></div><span class="te">Sleep, energy, your best hours.</span><span class="cta">Turn on with consent</span></div>
+            <div class="c gated"><div class="top"><span class="lg" style="background:#4aa6c9">B</span><span class="cn">Bank / Plaid</span><span class="soon">Soon</span></div><span class="te">What you value, read from where it goes.</span><span class="cta">Coming soon</span></div>
+            <div class="c gated"><div class="top"><span class="lg" style="background:#7a8a99">T</span><span class="cn">Location timeline</span><span class="soon">Consent</span></div><span class="te">Where your life actually happens.</span><span class="cta">Turn on with consent</span></div>
+          </div>
+          <div class="consent rise">These never connect silently. Each asks for explicit, revocable consent, stays encrypted, and is locked away from every connected tool until you say otherwise.</div>
+        </div>
+        <div class="pane" id="forms">
+          <div class="qlist rise">
+            <div class="q"><div class="qhead" data-q="q1"><div class="qpct"><svg width="38" height="38"><circle cx="19" cy="19" r="15" fill="none" stroke="rgba(245,238,227,.1)" stroke-width="4"/><circle cx="19" cy="19" r="15" fill="none" stroke="var(--amber)" stroke-width="4" stroke-linecap="round" stroke-dasharray="94" stroke-dashoffset="38"/></svg><span>60%</span></div><div class="qn"><div class="qt">The basics</div><div class="qs">≈ 2 min · name, base, what you do</div></div><div class="qcta">Continue ›</div></div>
+              <div class="qbody" id="q1"><div class="field"><label>Preferred name</label><input value="Finley Underwood" /></div><div class="field"><label>Where are you based?</label><input placeholder="City, country" /></div><div class="field"><label>What do you do?</label><input placeholder="In one line" /></div><div class="save-row"><button class="btn">Save &amp; continue</button></div></div>
+            </div>
+            <div class="q"><div class="qhead" data-q="q5"><div class="qpct"><svg width="38" height="38"><circle cx="19" cy="19" r="15" fill="none" stroke="rgba(245,238,227,.1)" stroke-width="4"/><circle cx="19" cy="19" r="15" fill="none" stroke="var(--amber)" stroke-width="4" stroke-linecap="round" stroke-dasharray="94" stroke-dashoffset="56"/></svg><span>40%</span></div><div class="qn"><div class="qt">How you learn best</div><div class="qs">≈ 2 min · powers your acceleration</div></div><div class="qcta">Continue ›</div></div>
+              <div class="qbody" id="q5"><div class="field"><label>You learn fastest when you…</label><div class="pills"><span class="pill on">Build something</span><span class="pill">Read deeply</span><span class="pill">Talk it through</span><span class="pill">Watch first</span></div></div><div class="field"><label>You're sharpest…</label><div class="pills"><span class="pill on">Early morning</span><span class="pill">Afternoon</span><span class="pill">Late night</span></div></div><div class="save-row"><button class="btn">Save &amp; continue</button></div></div>
+            </div>
+            <div class="q"><div class="qhead" data-q="q4"><div class="qpct"><svg width="38" height="38"><circle cx="19" cy="19" r="15" fill="none" stroke="rgba(245,238,227,.1)" stroke-width="4"/><circle cx="19" cy="19" r="15" fill="none" stroke="var(--t-faint)" stroke-width="4" stroke-dasharray="94" stroke-dashoffset="94"/></svg><span>0%</span></div><div class="qn"><div class="qt">Goals &amp; the next year</div><div class="qs">≈ 3 min · the real ones</div></div><div class="qcta">Start ›</div></div><div class="qbody" id="q4"><div class="field"><label>If the year went exactly right, what happened?</label><input placeholder="Say it plainly" /></div><div class="save-row"><button class="btn">Save &amp; continue</button></div></div></div>
+          </div>
+        </div>
+        <div class="pane" id="upl">
+          <div class="drop rise"><div class="big">Drop in anything personal</div><div class="types">.txt · .md · .pdf · .mp3 · .m4a · .wav · .webm · .jpg · .csv</div></div>
+          <div class="sect rise" style="margin-top:24px">Outside the box →<span class="ln"></span></div>
+          <div class="ideas rise">
+            <div class="idea"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zM5 11a7 7 0 0 0 14 0M12 18v3"/></svg>A voice memo, talking freely</div>
+            <div class="idea"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 4h14v16l-7-3-7 3z"/></svg>Old journal entries</div>
+            <div class="idea"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 4h11l3 3v13H5zM9 9h6M9 13h6"/></svg>Essays you're proud of</div>
+            <div class="idea"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h5"/></svg>Your résumé / CV</div>
+            <div class="idea"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>Photos that mean something</div>
+            <div class="idea"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Saved notes &amp; lists</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====== SETTINGS ====== -->
+      <section class="screen" id="settings">
+        <div class="eyebrow rise">Settings</div>
+        <h1 class="title rise">Profile &amp; <em>account.</em></h1>
+        <div class="lede rise" style="margin-bottom:24px">Yours. Here's the proof and the controls.</div>
+        <div class="panel rise"><div class="kv"><div><div class="k">Email</div><div class="v">finley@qsbsrollover.com</div></div><div><div class="k">Member since</div><div class="v">May 21, 2026</div></div><div><div class="k">Profile complete</div><div class="v" style="color:var(--amber-soft)" id="spct">38% · 10 things learned</div></div><div><div class="k">Connected tools</div><div class="v">In: 1 source · Out: 0 workspaces</div></div></div></div>
+        <div class="panel rise"><h3>Ownership, privacy &amp; scope</h3><div class="pp">A copy of you should never sit inside an ad company. It lives here, encrypted, and you decide exactly what each connected tool can see and write back.</div>
+          <div class="own">
+            <div class="o"><div class="h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Encrypted &amp; private</div><div class="s">Never used to train shared models.</div></div>
+            <div class="o"><div class="h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 7V3M15 7V3M8 7h8v4a4 4 0 0 1-8 0z"/></svg>Per-tool scope</div><div class="s">Set exactly what Claude vs Cursor vs anything else can read or write. Manage it on the <span class="navlink" data-screen="plugin">Plug in</span> tab.</div></div>
+            <div class="o"><div class="h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 16V4M7 9l5 5 5-5M5 20h14"/></svg>Export &amp; revoke</div><div class="s">Take the whole profile, or cut off any tool, anytime.</div></div>
+          </div>
+        </div>
+        <div class="panel warnote rise"><h3>Reset</h3><div class="pp">Wipes every memory, plan, source, and connection. Can't be undone.</div><button class="btn ghost" style="border-color:rgba(240,168,76,.5);color:var(--amber-soft)">Start fresh</button></div>
+        <div class="footnote rise">PROTOTYPE · makeover of soultech-umber.vercel.app · learn-first · write-back flywheel · per-tool scope · empty states · mobile</div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l4 4 10-10"/></svg></span><span id="toasttxt"></span></div>
+
+<script>
+  const labels={learn:"Learn · Accelerate",plugin:"Plug in",chat:"Chat",overview:"Overview",memory:"Memory",sources:"Sources",settings:"Settings"};
+  function go(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.screen===id));
+    document.getElementById('crumb').textContent=labels[id]||'';
+    document.querySelector('.main').scrollTo({top:0});
+  }
+
+  // profile percent + ring
+  const RC=239; let pct=38;
+  function setPct(p){
+    pct=Math.max(0,Math.min(100,p));
+    document.getElementById('pbar').style.width=pct+'%';
+    document.getElementById('plabel').textContent=pct+'%';
+    const ring=document.getElementById('oring'); if(ring) ring.setAttribute('stroke-dashoffset', RC*(1-pct/100));
+    const o=document.getElementById('opct'); if(o) o.textContent=pct+'%';
+    const s=document.getElementById('spct'); if(s) s.textContent=pct+'% · '+(pct===0?'0':Math.round(pct/3.8))+' things learned';
+  }
+
+  // view state (empty vs populated)
+  function setView(v){
+    document.body.className = 'state-'+v;
+    document.querySelectorAll('.seg button').forEach(b=>b.classList.toggle('on',b.dataset.view===v));
+    if(v==='new'){ setPct(0); document.getElementById('ometa').textContent='nothing learned yet · no tools connected'; }
+    else { setPct(38); document.getElementById('ometa').textContent='10 things learned · plugged into 1 tool'; }
+  }
+  setView('finley');
+
+  function toast(msg){
+    const t=document.getElementById('toast'); document.getElementById('toasttxt').innerHTML=msg;
+    t.classList.add('show'); clearTimeout(window._tt); window._tt=setTimeout(()=>t.classList.remove('show'),2600);
+  }
+
+  document.addEventListener('click',e=>{
+    const t=e.target.closest('[data-screen]'); if(t){go(t.dataset.screen);return;}
+    const vb=e.target.closest('.seg button'); if(vb){setView(vb.dataset.view);return;}
+    const tab=e.target.closest('.tab'); if(tab){document.querySelectorAll('#sources .tab').forEach(x=>x.classList.remove('on'));tab.classList.add('on');document.querySelectorAll('#sources .pane').forEach(p=>p.classList.toggle('on',p.id===tab.dataset.pane));return;}
+    const qh=e.target.closest('.qhead'); if(qh){document.getElementById(qh.dataset.q).classList.toggle('open');return;}
+    const pill=e.target.closest('.pill'); if(pill){pill.parentElement.querySelectorAll('.pill').forEach(p=>p.classList.remove('on'));pill.classList.add('on');return;}
+    const sw=e.target.closest('.sw'); if(sw && !sw.classList.contains('lock')){sw.classList.toggle('on');return;}
+    const cp=e.target.closest('.cp'); if(cp){const o=cp.textContent;cp.textContent='Copied ✓';try{navigator.clipboard&&navigator.clipboard.writeText('https://mcp.soultech.ai/u/finley/sse');}catch(_){}setTimeout(()=>cp.textContent=o,1400);return;}
+    const lb=e.target.closest('#loopbtn'); if(lb){
+      toast('<b>Memory written back</b> from Claude · orchestration track 62% → 66%');
+      const b=document.getElementById('trk1'), c=document.getElementById('trk1c');
+      if(b){b.style.width='66%'; c.textContent='66% · +4 from your last Claude session, automatically';}
+      return;
+    }
+    const c=e.target.closest('.c .cta'); const card=c&&c.closest('.c');
+    if(c && card && !card.classList.contains('linked') && !card.classList.contains('gated')){
+      c.textContent = c.textContent.indexOf('Add')>-1?'✓ Added':(c.textContent.indexOf('keys')>-1?'✓ Issued':'✓ Connected');
+      card.classList.add('linked');
+      if(card.closest('#connect')){ setPct(pct+7); toast('<b>Connected.</b> Profile +7%, your clone just got sharper'); }
+      return;
+    }
+    const r=e.target.closest('.redact'); if(r){const m=r.closest('.mem');m.style.opacity=.35;r.textContent='Redacted';}
+  });
+  document.querySelectorAll('#memory .chip').forEach(c=>c.addEventListener('click',()=>{document.querySelectorAll('#memory .chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');}));
+</script>

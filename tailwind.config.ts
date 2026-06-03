@@ -20,6 +20,10 @@ const config: Config = {
           "Arial",
           "sans-serif",
         ],
+        // Soultech v4 type system (next/font CSS variables).
+        display: ["var(--font-fraunces)", "Fraunces", "serif"],
+        mono: ["var(--font-ibm)", "IBM Plex Mono", "ui-monospace", "monospace"],
+        body: ["var(--font-hanken)", "Hanken Grotesk", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       colors: {
         ink: {
@@ -27,6 +31,9 @@ const config: Config = {
           soft: "#101013",
           line: "#1f1f23",
         },
+        // Soultech v4 accents live as CSS vars (--amber/--cool) in globals.css,
+        // consumed by the .app surface; not mapped here to avoid clobbering
+        // Tailwind's default amber scale used by legacy portal components.
       },
       animation: {
         "fade-up": "fadeUp 0.6s ease-out both",
