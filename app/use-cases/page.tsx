@@ -6,7 +6,7 @@ import { ExchangeCard } from "@/components/ExchangeCard";
 
 export const metadata: Metadata = {
   title: `Use cases: ${brand.name}`,
-  description: `Ways people are using ${brand.shortName} to learn and think.`,
+  description: `Ways people are using ${brand.shortName} to learn and think more clearly.`,
 };
 
 type UseCase = {
