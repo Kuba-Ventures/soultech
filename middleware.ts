@@ -1,4 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+// Auth route matcher tuning placeholder (validation PR — no behavior change).
 
 const isProtectedRoute = createRouteMatcher(["/portal(.*)"]);
 
