@@ -57,7 +57,7 @@ export default async function MemoriesPage({ searchParams }: PageProps) {
             Memories
           </div>
           <h1 className="mt-2 text-3xl font-medium tracking-[-0.02em]">
-            Your corpus.
+            Your brain.
           </h1>
           <p className="mt-2 text-sm text-white/55">
             {total} {total === 1 ? "memory" : "memories"}

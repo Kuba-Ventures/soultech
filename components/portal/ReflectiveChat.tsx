@@ -165,7 +165,7 @@ export function ReflectiveChat({ initialMessages }: Props) {
         {messages.length === 0 && (
           <div className="text-sm text-white/45 leading-relaxed">
             Ask your clone something. It can only draw on what it knows about
-            you, so the richer your corpus, the deeper this gets.
+            you, so the more you share, the deeper this gets.
           </div>
         )}
         {messages.map((m) => (
