@@ -5,6 +5,8 @@ import type { CitedMessage } from "@/app/portal/chat/types";
 
 type Props = {
   initialMessages: CitedMessage[];
+  /** Seed message (from the dashboard "new chat" box) — auto-sent once on mount. */
+  initialDraft?: string;
 };
 
 type StreamEvent =
@@ -23,13 +25,14 @@ type StreamEvent =
 
 const STREAMING_ID = "__streaming__";
 
-export function ReflectiveChat({ initialMessages }: Props) {
+export function ReflectiveChat({ initialMessages, initialDraft }: Props) {
   const [messages, setMessages] = useState<CitedMessage[]>(initialMessages);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const autoSent = useRef(false);
 
   useEffect(() => {
     const el = listRef.current;
@@ -37,8 +40,20 @@ export function ReflectiveChat({ initialMessages }: Props) {
     el.scrollTop = el.scrollHeight;
   }, [messages, pending]);
 
-  async function submit() {
-    const content = draft.trim();
+  // Seed message handed off from the dashboard "new chat" box: send it once,
+  // then strip ?q from the URL so a refresh doesn't resend it.
+  useEffect(() => {
+    if (autoSent.current) return;
+    const seed = initialDraft?.trim();
+    if (!seed) return;
+    autoSent.current = true;
+    window.history.replaceState(null, "", "/portal/chat");
+    submit(seed);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function submit(overrideContent?: string) {
+    const content = (overrideContent ?? draft).trim();
     if (!content || pending) return;
 
     const optimisticId = `tmp-${Date.now()}`;
@@ -193,7 +208,7 @@ export function ReflectiveChat({ initialMessages }: Props) {
             />
             <button
               type="button"
-              onClick={submit}
+              onClick={() => submit()}
               disabled={pending || !draft.trim()}
               className="shrink-0 inline-flex items-center justify-center rounded-full bg-white text-black px-4 py-1.5 text-xs font-medium hover:bg-white/90 disabled:opacity-40 transition"
             >
