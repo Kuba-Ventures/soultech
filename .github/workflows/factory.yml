@@ -1,0 +1,72 @@
+name: factory
+
+# Supervised PR factory. Every PR runs two checks:
+#   factory-tests  — the Vitest safety net (npm test)
+#   factory-review — the supervised reviewer's verdict (APPROVE-LOWRISK / ESCALATE)
+#
+# Low-risk PRs auto-merge ONLY after the repo variable FACTORY_AUTOMERGE is set to
+# "true" (Phase 3, after a ~2-week supervised soak with zero escapes). Until then the
+# reviewer posts its verdict and labels the PR, but nothing merges on its own.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  factory-tests:
+    name: factory-tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  factory-review:
+    name: factory-review
+    needs: factory-tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Supervised review
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          additional_permissions: |
+            actions: read
+          claude_args: '--allowed-tools "Read,Grep,Glob,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(gh pr edit:*),Bash(git diff:*),Bash(git fetch:*),Bash(git log:*)"'
+          prompt: |
+            You are the gate for a supervised PR factory. Review pull request
+            #${{ github.event.pull_request.number }} in ${{ github.repository }}.
+
+            The factory-tests job has already passed — this job depends on it.
+
+            Use the **pr-reviewer** subagent defined at .claude/agents/pr-reviewer.md and
+            follow its instructions exactly:
+              1. Read the `## Merge policy` block in CLAUDE.md to learn this repo's low-risk
+                 surfaces and its always-escalate surfaces.
+              2. Read the PR diff against the base branch.
+              3. Walk the escalation gates and decide APPROVE-LOWRISK or ESCALATE. When in
+                 doubt, ESCALATE — this is a paying client's product.
+
+            Then take exactly these actions:
+              - Post your review as a PR comment, ending with the exact VERDICT line
+                (`VERDICT: APPROVE-LOWRISK` or `VERDICT: ESCALATE — <reason>`).
+              - If APPROVE-LOWRISK: add the label `factory:lowrisk` to the PR.
+              - If ESCALATE: add the label `factory:escalate` to the PR.
+
+            Do NOT merge the PR under any circumstances. Auto-merge is handled separately and
+            is currently disabled.
