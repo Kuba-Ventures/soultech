@@ -64,7 +64,7 @@ export default async function SettingsPage() {
 
       <section className="mt-10">
         <div className="text-xs uppercase tracking-wider text-white/40">
-          Corpus
+          Your brain
         </div>
         <div className="mt-3 rounded-2xl border border-white/8 bg-white/[0.02] p-5 grid sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
           <Stat label="Total memories" value={stats.total.toString()} />

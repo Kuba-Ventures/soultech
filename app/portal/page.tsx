@@ -24,8 +24,8 @@ export default async function PortalHome() {
         {first ? `Hello, ${first}.` : "Hello."}
       </h1>
       <p className="mt-4 text-white/60 leading-relaxed">
-        Your clone needs a corpus before it can sound like you. Start by feeding
-        it a few thoughts. Five minutes is enough to feel the difference.
+        Your clone learns from what you share. Start by teaching it a few
+        things about you. Five minutes is enough to feel the difference.
       </p>
 
       {onboardingInProgress && (
@@ -55,7 +55,7 @@ export default async function PortalHome() {
           href="/portal/memories"
           className="rounded-2xl border border-white/8 bg-white/[0.02] p-5 hover:bg-white/[0.04] hover:border-white/15 transition"
         >
-          <div className="text-sm font-medium">View your corpus</div>
+          <div className="text-sm font-medium">Browse your memories</div>
           <p className="mt-1 text-xs text-white/50 leading-relaxed">
             See every memory, edit summaries, redact what shouldn&rsquo;t be
             there.

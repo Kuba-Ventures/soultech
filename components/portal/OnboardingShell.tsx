@@ -249,7 +249,7 @@ export function OnboardingShell({
               Onboarding
             </div>
             <h1 className="mt-1 text-2xl font-medium tracking-[-0.02em]">
-              Seed the corpus.
+              Build your brain.
             </h1>
           </div>
           <div className="text-xs text-white/45">

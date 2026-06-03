@@ -4,11 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const items: Array<{ href: string; label: string; description: string }> = [
-  { href: "/portal/reflect", label: "Reflect", description: "Talk to seed the corpus" },
+  { href: "/portal/reflect", label: "Reflect", description: "Talk to build your brain" },
   { href: "/portal/chat", label: "Chat", description: "Talk with your clone" },
   { href: "/portal/upload", label: "Upload", description: "Documents and audio" },
   { href: "/portal/memories", label: "Memories", description: "Browse and redact" },
-  { href: "/portal/settings", label: "Settings", description: "Profile, corpus, account" },
+  { href: "/portal/settings", label: "Settings", description: "Profile, brain, account" },
 ];
 
 export function PortalNav() {

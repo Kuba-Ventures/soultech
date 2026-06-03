@@ -18,7 +18,7 @@ export function AccountDeletion({ email }: Props) {
       setError("Type your email to confirm.");
       return;
     }
-    if (!confirm("This permanently wipes your corpus, conversations, and account. No undo.")) {
+    if (!confirm("This permanently wipes your memories, uploads, conversations, and account. No undo.")) {
       return;
     }
     setError(null);
@@ -42,8 +42,8 @@ export function AccountDeletion({ email }: Props) {
         Delete account
       </h2>
       <p className="mt-2 text-sm text-white/55 leading-relaxed">
-        Permanently wipes your corpus, all conversations, audit log, and Clerk
-        account. Cannot be undone.
+        Permanently wipes your memories, uploads, all conversations, audit log,
+        and Clerk account. Cannot be undone.
       </p>
 
       {!expanded ? (

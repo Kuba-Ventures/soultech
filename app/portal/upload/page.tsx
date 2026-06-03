@@ -11,11 +11,11 @@ export default function UploadPage() {
         Upload
       </div>
       <h1 className="mt-2 text-3xl font-medium tracking-[-0.02em]">
-        Feed the corpus.
+        Upload your brain.
       </h1>
       <p className="mt-3 text-sm text-white/55 leading-relaxed max-w-2xl">
-        Drop in a document, a voice memo, or a transcript. Each upload gets
-        chunked, summarized, and embedded. You can review and redact anything
+        Drop in a document, a voice memo, or a transcript. Each upload is read,
+        processed, and stored as memories. You can review and redact anything
         afterwards in <a href="/portal/memories" className="underline underline-offset-2">Memories</a>.
       </p>
 

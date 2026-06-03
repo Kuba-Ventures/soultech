@@ -19,7 +19,7 @@ export default async function ReflectPage() {
           Reflect
         </div>
         <h1 className="mt-2 text-3xl font-medium tracking-[-0.02em]">
-          Talk to seed the corpus.
+          Talk to build your brain.
         </h1>
         <p className="mt-3 text-sm text-white/55 leading-relaxed">
           The Interviewer asks. You answer. Every reply you send becomes a

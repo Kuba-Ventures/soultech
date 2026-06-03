@@ -13,7 +13,7 @@ export function ResetCorpus() {
   function onReset() {
     if (
       !confirm(
-        "Reset your corpus? Memories, conversations, uploads, and audit log get wiped. Your account stays.",
+        "Reset your brain? Memories, conversations, uploads, and audit log get wiped. Your account stays.",
       )
     ) {
       return;
@@ -34,7 +34,7 @@ export function ResetCorpus() {
   return (
     <section className="mt-10 rounded-2xl border border-amber-400/20 bg-amber-400/[0.025] p-5">
       <div className="text-xs uppercase tracking-wider text-amber-200">
-        Reset corpus
+        Reset your brain
       </div>
       <h2 className="mt-2 text-base font-medium text-white/85">
         Start fresh
@@ -51,7 +51,7 @@ export function ResetCorpus() {
         disabled={pending}
         className="mt-4 inline-flex items-center justify-center rounded-full border border-amber-400/40 text-amber-200 px-4 py-2 text-xs hover:bg-amber-400/10 disabled:opacity-50 transition"
       >
-        {pending ? "Wiping…" : "Reset my corpus"}
+        {pending ? "Wiping…" : "Start fresh"}
       </button>
 
       {error && <div className="mt-2 text-xs text-rose-400">{error}</div>}
