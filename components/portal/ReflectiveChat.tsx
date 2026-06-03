@@ -204,7 +204,7 @@ export function ReflectiveChat({ initialMessages, initialDraft }: Props) {
               rows={1}
               placeholder="Ask your clone…"
               disabled={pending}
-              className="flex-1 resize-none bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none min-h-[24px] max-h-[200px]"
+              className="flex-1 resize-none bg-transparent text-base leading-relaxed text-white placeholder:text-white/30 focus:outline-none min-h-[52vh] max-h-[64vh]"
             />
             <button
               type="button"
