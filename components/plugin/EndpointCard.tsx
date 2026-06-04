@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { onActivateKey } from "@/lib/ui/onActivateKey";
 
 /**
  * The MCP connector card: the member's per-user two-way endpoint URL, copyable.
@@ -37,7 +38,13 @@ export function EndpointCard({
       </div>
       <div className="urlbox">
         <code>{displayUrl}</code>
-        <span className="cp" role="button" tabIndex={0} onClick={copy}>
+        <span
+          className="cp"
+          role="button"
+          tabIndex={0}
+          onClick={copy}
+          onKeyDown={onActivateKey(copy)}
+        >
           {copied ? "Copied ✓" : "Copy"}
         </span>
       </div>

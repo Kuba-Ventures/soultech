@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { onActivateKey } from "@/lib/ui/onActivateKey";
 
 type Connector = {
   key: string;
@@ -47,6 +48,9 @@ export function ConnectorGrid() {
               role="button"
               tabIndex={0}
               onClick={() => setLinked((p) => ({ ...p, [c.key]: true }))}
+              onKeyDown={onActivateKey(() =>
+                setLinked((p) => ({ ...p, [c.key]: true })),
+              )}
             >
               {isLinked ? c.done : c.cta}
             </span>

@@ -7,6 +7,7 @@ import {
   saveQuestionnaireAction,
 } from "@/app/(app)/sources/actions";
 import type { SensitiveConsents } from "@/lib/profile/consent";
+import { onActivateKey } from "@/lib/ui/onActivateKey";
 
 type Tab = "connect" | "forms" | "upl";
 
@@ -93,6 +94,9 @@ function Connections({ initialConsents }: { initialConsents: SensitiveConsents }
                 role="button"
                 tabIndex={0}
                 onClick={() => !isLinked && setLinked((p) => ({ ...p, [c.name]: true }))}
+                onKeyDown={onActivateKey(
+                  () => !isLinked && setLinked((p) => ({ ...p, [c.name]: true })),
+                )}
               >
                 {isLinked ? "✓ Connected" : "Connect"}
               </span>
@@ -115,7 +119,14 @@ function Connections({ initialConsents }: { initialConsents: SensitiveConsents }
                 <span className="soon">Consent</span>
               </div>
               <span className="te">{c.blurb}</span>
-              <span className="cta" role="button" tabIndex={0} onClick={() => toggleConsent(c.key)}>
+              <span
+                className="cta"
+                role="button"
+                tabIndex={0}
+                aria-pressed={on}
+                onClick={() => toggleConsent(c.key)}
+                onKeyDown={onActivateKey(() => toggleConsent(c.key))}
+              >
                 {on ? "✓ Consented · tap to revoke" : "Turn on with consent"}
               </span>
             </div>
@@ -271,7 +282,9 @@ function Uploads() {
         className="drop rise"
         role="button"
         tabIndex={0}
+        aria-label="Upload a file"
         onClick={() => inputRef.current?.click()}
+        onKeyDown={onActivateKey(() => inputRef.current?.click())}
       >
         <div className="big">{pending ? "Working…" : "Drop in anything personal"}</div>
         <div className="types">.txt · .md · .pdf · .mp3 · .m4a · .wav · .webm</div>

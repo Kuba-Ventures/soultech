@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 type NavItem = {
   href: string;
@@ -107,6 +107,12 @@ const groups: NavGroup[] = [
 
 export function AppSidebar({ percent }: { percent: number }) {
   const pathname = usePathname();
+  // Animate the bar up to the real value on mount (CSS width transition).
+  const [barWidth, setBarWidth] = useState(0);
+  useEffect(() => {
+    const t = setTimeout(() => setBarWidth(percent), 80);
+    return () => clearTimeout(t);
+  }, [percent]);
   return (
     <aside className="side">
       <div className="brand">
@@ -146,7 +152,7 @@ export function AppSidebar({ percent }: { percent: number }) {
             <b>{percent}%</b>
           </div>
           <div className="bar">
-            <i style={{ width: `${percent}%` }} />
+            <i style={{ width: `${barWidth}%` }} />
           </div>
         </div>
         <div className="privacy">

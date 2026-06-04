@@ -87,6 +87,17 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
 }
 
+/* Keyboard focus ring for every interactive control on the app surface. */
+.app a:focus-visible,
+.app button:focus-visible,
+.app [role="button"]:focus-visible,
+.app textarea:focus-visible,
+.app input:focus-visible {
+  outline: 2px solid var(--cool);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
 /* ---- sidebar ---- */
 .app .side {
   position: sticky;
@@ -1349,7 +1360,12 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .app .screen .rise,
   .app .cv .ln,
-  .app .cv .end { animation: none; }
+  .app .cv .end,
+  .app .fw-spin,
+  .app .typing span { animation: none; }
   .app .cv .ln { stroke-dashoffset: 0; }
-  .app .cv .end { opacity: 1; }
+  .app .cv .end,
+  .app .typing span { opacity: 1; }
+  .app .ring circle.fg,
+  .app .bar i { transition: none; }
 }
