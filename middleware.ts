@@ -1,8 +1,23 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-const isProtectedRoute = createRouteMatcher(["/portal(.*)"]);
+// The authenticated app surface (v4 root routes + legacy /portal redirects).
+const isProtectedRoute = createRouteMatcher([
+  "/learn(.*)",
+  "/plugin(.*)",
+  "/chat(.*)",
+  "/overview(.*)",
+  "/memory(.*)",
+  "/sources(.*)",
+  "/settings(.*)",
+  "/portal(.*)",
+]);
+
+// The per-user MCP server authenticates with its own connection token, not a
+// Clerk session, so it must never be Clerk-protected.
+const isMcpRoute = createRouteMatcher(["/api/mcp(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {
+  if (isMcpRoute(req)) return;
   if (isProtectedRoute(req)) {
     await auth.protect();
   }
