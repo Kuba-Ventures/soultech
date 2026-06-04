@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { AppSidebar } from "./AppSidebar";
+import { AppSidebar, type Highlight } from "./AppSidebar";
 import { Topbar } from "./Topbar";
 
 /**
@@ -12,18 +12,20 @@ export function AppShell({
   email,
   name,
   percent,
+  highlights,
   children,
 }: {
   email: string;
   name?: string;
   percent: number;
+  highlights?: Highlight[];
   children: ReactNode;
 }) {
   return (
     <div className="app">
       <div className="glow" />
       <div className="grain" />
-      <AppSidebar percent={percent} />
+      <AppSidebar percent={percent} highlights={highlights} />
       <main className="main">
         <Topbar email={email} name={name} />
         <div className="wrap">{children}</div>

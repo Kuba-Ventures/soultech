@@ -17,7 +17,13 @@ const CHIP_LABEL: Record<SavedChip["type"], string> = {
   PREFERENCE: "Preference saved",
 };
 
-export function CloneChat({ initialMessages }: { initialMessages: Msg[] }) {
+export function CloneChat({
+  initialMessages,
+  conversationId,
+}: {
+  initialMessages: Msg[];
+  conversationId?: string;
+}) {
   const [messages, setMessages] = useState<Msg[]>(initialMessages);
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState(false);
@@ -56,7 +62,7 @@ export function CloneChat({ initialMessages }: { initialMessages: Msg[] }) {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content, conversationId }),
       });
       if (!res.ok || !res.body) {
         const b = await res.json().catch(() => ({ error: "Request failed" }));

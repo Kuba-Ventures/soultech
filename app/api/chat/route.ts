@@ -4,8 +4,10 @@ import { auth } from "@clerk/nextjs/server";
 import { getCurrentMember } from "@/lib/db/members";
 import {
   appendMessage,
+  getChat,
   getOrCreateReflectiveConversation,
   listMessages,
+  maybeTitleChat,
 } from "@/lib/db/conversations";
 import { searchMemories, type RetrievedMemory } from "@/lib/retrieval/search";
 import { detectPattern } from "@/lib/retrieval/patterns";
@@ -29,6 +31,7 @@ export const maxDuration = 120;
 
 const bodySchema = z.object({
   content: z.string().trim().min(1, "Say something to send.").max(8000),
+  conversationId: z.string().uuid().optional(),
 });
 
 const MAX_TURNS_IN_CONTEXT = 16;
@@ -43,6 +46,7 @@ export async function POST(req: NextRequest) {
   }
 
   let content: string;
+  let conversationId: string | undefined;
   try {
     const body = await req.json();
     const parsed = bodySchema.safeParse(body);
@@ -55,6 +59,7 @@ export async function POST(req: NextRequest) {
       );
     }
     content = parsed.data.content;
+    conversationId = parsed.data.conversationId;
   } catch {
     return new Response(JSON.stringify({ error: "Invalid JSON" }), {
       status: 400,
@@ -72,13 +77,21 @@ export async function POST(req: NextRequest) {
       try {
         const member = await getCurrentMember();
         await enforceMessageLimit(member.id);
-        const convo = await getOrCreateReflectiveConversation(member.id);
+        // Target a specific saved chat when given (must belong to the member);
+        // otherwise fall back to the member's default rolling conversation.
+        const convo = conversationId
+          ? await getChat(member.id, conversationId)
+          : await getOrCreateReflectiveConversation(member.id);
+        if (!convo) {
+          throw new AppError("not_found", "That chat could not be found.");
+        }
 
         const memberMsg = await appendMessage({
           conversationId: convo.id,
           role: "member",
           content,
         });
+        await maybeTitleChat(convo.id, content);
         send({
           type: "member",
           id: memberMsg.id,

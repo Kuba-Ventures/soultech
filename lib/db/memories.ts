@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { getDb } from "./client";
 import { memories, type Memory, type NewMemory } from "./schema";
 import { generateEmbedding } from "@/lib/models/generateEmbedding";
@@ -74,6 +74,31 @@ export async function listMemories(
     .orderBy(desc(memories.createdAt))
     .limit(opts?.limit ?? 50)
     .offset(opts?.offset ?? 0);
+}
+
+/** Top recent typed memories (facts/plans/preferences) for the sidebar brain panel. */
+export async function listHighlightMemories(
+  memberId: string,
+  limit = 6,
+): Promise<Array<{ id: string; type: Memory["type"]; summary: string }>> {
+  const db = getDb();
+  const rows = await db
+    .select({
+      id: memories.id,
+      type: memories.type,
+      summary: memories.contentSummary,
+    })
+    .from(memories)
+    .where(
+      and(
+        eq(memories.memberId, memberId),
+        eq(memories.redacted, false),
+        inArray(memories.type, ["FACT", "PLAN", "PREFERENCE"]),
+      ),
+    )
+    .orderBy(desc(memories.createdAt))
+    .limit(limit);
+  return rows;
 }
 
 export async function redactMemory(
