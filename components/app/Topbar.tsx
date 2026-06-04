@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { ProfileMenu } from "./ProfileMenu";
 
 const crumbs: Record<string, string> = {
   "/learn": "Learn · Accelerate",
@@ -20,16 +21,12 @@ function crumbFor(pathname: string | null): string {
   return key ? crumbs[key] : "";
 }
 
-export function Topbar({ email }: { email: string }) {
+export function Topbar({ email, name }: { email: string; name?: string }) {
   const pathname = usePathname();
-  const initial = (email.trim()[0] || "?").toUpperCase();
   return (
     <div className="topbar">
       <div className="crumb">{crumbFor(pathname)}</div>
-      <div className="who">
-        <span>{email}</span>
-        <span className="av">{initial}</span>
-      </div>
+      <ProfileMenu email={email} name={name} />
     </div>
   );
 }

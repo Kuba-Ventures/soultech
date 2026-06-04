@@ -17,10 +17,12 @@ export default async function AppLayout({
   const member = await getCurrentMember();
   const user = await currentUser();
   const email = user?.primaryEmailAddress?.emailAddress ?? member.email;
+  const name =
+    [user?.firstName, user?.lastName].filter(Boolean).join(" ") || undefined;
   const { percent } = await getProfileCompleteness(member.id);
 
   return (
-    <AppShell email={email} percent={percent}>
+    <AppShell email={email} name={name} percent={percent}>
       {children}
     </AppShell>
   );
