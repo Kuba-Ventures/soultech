@@ -1,8 +1,17 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { getCurrentMember } from "@/lib/db/members";
 import { createMemory } from "@/lib/db/memories";
+import { createChat } from "@/lib/db/conversations";
 import { generateResponse } from "@/lib/models/generateResponse";
+
+/** Start a fresh saved chat and open it. */
+export async function startNewChat(): Promise<void> {
+  const member = await getCurrentMember();
+  const chat = await createChat(member.id);
+  redirect(`/chat?c=${chat.id}`);
+}
 
 export type SavedChip = { type: "FACT" | "PLAN" | "PREFERENCE"; label: string };
 

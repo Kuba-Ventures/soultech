@@ -1,33 +1,43 @@
+import Link from "next/link";
 import { getCurrentMember } from "@/lib/db/members";
 import {
+  getChat,
   getOrCreateReflectiveConversation,
+  listChats,
   listMessages,
 } from "@/lib/db/conversations";
-import { getProfileCompleteness } from "@/lib/profile/completeness";
 import { CloneChat } from "@/components/chat/CloneChat";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { startNewChat } from "@/app/(app)/chat/actions";
 
 export const dynamic = "force-dynamic";
 
-const CHAT_ICON = (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-    <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" />
-  </svg>
-);
-
-export default async function ChatPage() {
+export default async function ChatPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ c?: string }>;
+}) {
   const member = await getCurrentMember();
-  const completeness = await getProfileCompleteness(member.id);
-  const convo = await getOrCreateReflectiveConversation(member.id);
-  const msgs = await listMessages(convo.id, { limit: 100 });
+  const { c } = await searchParams;
 
+  const chats = await listChats(member.id);
+
+  // Resolve the selected chat: the ?c param (if owned), else the most recent,
+  // else the member's default rolling conversation (created on demand).
+  let selected =
+    (c ? await getChat(member.id, c) : null) ?? chats[0] ?? null;
+  if (!selected) selected = await getOrCreateReflectiveConversation(member.id);
+
+  // Make sure the selected chat appears in the rail even if just created.
+  const rail = chats.some((x) => x.id === selected!.id)
+    ? chats
+    : [selected, ...chats];
+
+  const msgs = await listMessages(selected.id, { limit: 100 });
   const initialMessages = msgs.map((m) => ({
     id: m.id,
     role: m.role as "member" | "clone",
     content: m.content,
   }));
-
-  const thin = completeness.isEmpty && initialMessages.length === 0;
 
   return (
     <section className="screen on">
@@ -35,21 +45,35 @@ export default async function ChatPage() {
       <h1 className="title rise">
         Talk to <em>yourself.</em>
       </h1>
-      <div className="lede rise">
-        A version of you that remembers the important stuff (plans, decisions,
-        the detail you mentioned once) and saves it automatically.
+      <div className="lede rise" style={{ marginBottom: 18 }}>
+        A version of you that remembers the important stuff and saves it
+        automatically. Every chat is kept.
       </div>
 
-      {thin ? (
-        <EmptyState
-          icon={CHAT_ICON}
-          title="Say something worth keeping."
-          body="I'm thin on context right now, so I'll mostly ask questions back. The more you tell me, the more I sound like you."
-          actions={[{ label: "Add a few sources first", href: "/sources" }]}
-        />
-      ) : null}
+      <div className="chatbar rise">
+        <form action={startNewChat}>
+          <button type="submit" className="newchat">
+            + New chat
+          </button>
+        </form>
+        <div className="chatlist">
+          {rail.map((chat) => (
+            <Link
+              key={chat.id}
+              href={`/chat?c=${chat.id}`}
+              className={`chatchip${chat.id === selected.id ? " on" : ""}`}
+            >
+              {chat.title}
+            </Link>
+          ))}
+        </div>
+      </div>
 
-      <CloneChat initialMessages={initialMessages} />
+      <CloneChat
+        key={selected.id}
+        conversationId={selected.id}
+        initialMessages={initialMessages}
+      />
     </section>
   );
 }

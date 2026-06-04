@@ -41,6 +41,62 @@ export function getOrCreateReflectiveConversation(memberId: string) {
   return getOrCreateConversationByTitle(memberId, REFLECTIVE_TITLE);
 }
 
+const NEW_CHAT_TITLE = "New chat";
+
+/** Start a fresh saved chat. */
+export async function createChat(
+  memberId: string,
+  title: string = NEW_CHAT_TITLE,
+): Promise<Conversation> {
+  const inserted = await getDb()
+    .insert(conversations)
+    .values({ memberId, title })
+    .returning();
+  return inserted[0];
+}
+
+/** All of a member's saved chats (everything except the interviewer), newest activity first. */
+export async function listChats(memberId: string): Promise<Conversation[]> {
+  const db = getDb();
+  const rows = await db
+    .select()
+    .from(conversations)
+    .where(eq(conversations.memberId, memberId))
+    .orderBy(desc(conversations.lastMessageAt));
+  return rows.filter((c) => c.title !== INTERVIEWER_TITLE);
+}
+
+/** A specific chat, only if it belongs to the member. */
+export async function getChat(
+  memberId: string,
+  id: string,
+): Promise<Conversation | null> {
+  const rows = await getDb()
+    .select()
+    .from(conversations)
+    .where(and(eq(conversations.id, id), eq(conversations.memberId, memberId)))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+/** Name a still-default chat from its first message (a short snippet). */
+export async function maybeTitleChat(
+  conversationId: string,
+  fromMessage: string,
+): Promise<void> {
+  const snippet = fromMessage.replace(/\s+/g, " ").trim().slice(0, 48);
+  if (!snippet) return;
+  await getDb()
+    .update(conversations)
+    .set({ title: snippet })
+    .where(
+      and(
+        eq(conversations.id, conversationId),
+        eq(conversations.title, NEW_CHAT_TITLE),
+      ),
+    );
+}
+
 export async function appendMessage(input: NewMessage): Promise<Message> {
   const db = getDb();
   const rows = await db.insert(messages).values(input).returning();

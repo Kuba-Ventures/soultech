@@ -105,7 +105,26 @@ const groups: NavGroup[] = [
   },
 ];
 
-export function AppSidebar({ percent }: { percent: number }) {
+export type Highlight = {
+  id: string;
+  type: "FACT" | "PLAN" | "MEMORY" | "PREFERENCE";
+  summary: string;
+};
+
+const DOT_COLOR: Record<Highlight["type"], string> = {
+  FACT: "var(--cool)",
+  PLAN: "var(--amber)",
+  PREFERENCE: "var(--pref)",
+  MEMORY: "var(--t-faint)",
+};
+
+export function AppSidebar({
+  percent,
+  highlights = [],
+}: {
+  percent: number;
+  highlights?: Highlight[];
+}) {
   const pathname = usePathname();
   // Animate the bar up to the real value on mount (CSS width transition).
   const [barWidth, setBarWidth] = useState(0);
@@ -146,6 +165,21 @@ export function AppSidebar({ percent }: { percent: number }) {
       ))}
 
       <div className="foot">
+        <div className="brainpanel">
+          <div className="bp-h">Your brain</div>
+          {highlights.length > 0 ? (
+            highlights.map((h) => (
+              <div className="bp-item" key={h.id}>
+                <span className="bp-dot" style={{ background: DOT_COLOR[h.type] }} />
+                <span>{h.summary}</span>
+              </div>
+            ))
+          ) : (
+            <div className="bp-empty">
+              Facts, plans, and preferences show up here as you teach it.
+            </div>
+          )}
+        </div>
         <div className="prog">
           <div className="pl">
             <span>Profile</span>
