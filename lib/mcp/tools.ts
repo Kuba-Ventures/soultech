@@ -123,17 +123,16 @@ export const TOOLS: McpTool[] = [
       const body = str(args.body).trim();
       if (!body) throw new Error("save_memory requires a non-empty body.");
       const type = (MEMORY_TYPES as readonly string[]).includes(str(args.type))
-        ? str(args.type)
+        ? (str(args.type) as (typeof MEMORY_TYPES)[number])
         : "MEMORY";
-      // Phase 3a stores the semantic type in metadata; the typed `memories.type`
-      // column + backfill land in Phase 3b.
       const memory = await createMemory({
         memberId,
         sourceType: "chat",
         content: body,
+        type,
+        typeSource: "mcp",
         metadata: {
           mcp: true,
-          type,
           connectionId: connection.id,
           tool: connection.tool,
         },
