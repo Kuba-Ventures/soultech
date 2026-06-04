@@ -1,8 +1,9 @@
 import { resolveConnection, touchConnection } from "@/lib/mcp/auth";
 import { TOOLS, TOOLS_BY_NAME } from "@/lib/mcp/tools";
 import { ScopeError } from "@/lib/mcp/scope";
+import { getSensitiveConsents } from "@/lib/profile/consent";
 import { logAudit } from "@/lib/audit";
-import type { ToolConnection } from "@/lib/db/schema";
+import type { ScopeCategory, ToolConnection } from "@/lib/db/schema";
 
 // The MCP server is request/response (stateless Streamable HTTP), which fits
 // Vercel serverless. It authenticates by the per-connection token in the path,
@@ -32,6 +33,7 @@ function error(id: RpcId, code: number, message: string) {
 async function handleMessage(
   msg: RpcMessage,
   connection: ToolConnection,
+  consents: Partial<Record<ScopeCategory, boolean>>,
 ): Promise<object | null> {
   const id = msg.id ?? null;
   const method = msg.method;
@@ -63,7 +65,7 @@ async function handleMessage(
       if (!tool) return error(id, -32601, `Unknown tool: ${name}`);
       try {
         const out = await tool.handler(
-          { connection, memberId: connection.memberId },
+          { connection, memberId: connection.memberId, consents },
           args,
         );
         await logAudit({
@@ -121,15 +123,18 @@ export async function POST(
   }
 
   void touchConnection(connection.id);
+  const consents = await getSensitiveConsents(connection.memberId);
 
   if (Array.isArray(body)) {
     const out = (
-      await Promise.all(body.map((m) => handleMessage(m as RpcMessage, connection)))
+      await Promise.all(
+        body.map((m) => handleMessage(m as RpcMessage, connection, consents)),
+      )
     ).filter((r): r is object => r !== null);
     return Response.json(out);
   }
 
-  const res = await handleMessage(body as RpcMessage, connection);
+  const res = await handleMessage(body as RpcMessage, connection, consents);
   if (res === null) return new Response(null, { status: 202 });
   return Response.json(res);
 }
