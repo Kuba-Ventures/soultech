@@ -125,16 +125,27 @@ export async function POST(
   void touchConnection(connection.id);
   const consents = await getSensitiveConsents(connection.memberId);
 
+  const isMsg = (v: unknown): v is RpcMessage =>
+    typeof v === "object" && v !== null && !Array.isArray(v);
+
   if (Array.isArray(body)) {
+    const valid = body.filter(isMsg);
+    if (valid.length === 0) {
+      return Response.json(error(null, -32600, "Invalid Request"), { status: 400 });
+    }
     const out = (
       await Promise.all(
-        body.map((m) => handleMessage(m as RpcMessage, connection, consents)),
+        valid.map((m) => handleMessage(m, connection, consents)),
       )
     ).filter((r): r is object => r !== null);
     return Response.json(out);
   }
 
-  const res = await handleMessage(body as RpcMessage, connection, consents);
+  if (!isMsg(body)) {
+    return Response.json(error(null, -32600, "Invalid Request"), { status: 400 });
+  }
+
+  const res = await handleMessage(body, connection, consents);
   if (res === null) return new Response(null, { status: 202 });
   return Response.json(res);
 }
