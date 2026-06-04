@@ -54,6 +54,21 @@ export const trackStatusEnum = pgEnum("track_status", [
   "archived",
 ]);
 
+// Tools a member can plug their clone into via the MCP connector (Phase 2+).
+export const toolEnum = pgEnum("tool", [
+  "claude",
+  "cursor",
+  "chatgpt",
+  "notion",
+  "raycast",
+  "api",
+]);
+
+export const connectionStatusEnum = pgEnum("connection_status", [
+  "active",
+  "revoked",
+]);
+
 export const members = pgTable("members", {
   id: uuid("id").primaryKey().defaultRandom(),
   clerkId: text("clerk_id").notNull().unique(),
@@ -223,6 +238,54 @@ export type LearningTrait = {
   evidence?: string;
 };
 
+/**
+ * Scope categories a member grants per connection. The first four are normal;
+ * the last three are sensitive and stay denied until explicit consent (Phase 3
+ * enforcement). Each cell is independently read/write gated.
+ */
+export type ScopeCategory =
+  | "profile"
+  | "learning_style"
+  | "memories"
+  | "tracks"
+  | "health"
+  | "financial"
+  | "location";
+
+export type ScopeMatrix = Partial<
+  Record<ScopeCategory, { read: boolean; write: boolean }>
+>;
+
+/**
+ * A tool the member has plugged their clone into. The MCP server (Phase 3)
+ * authenticates by `tokenHash`, resolves this row, and enforces `scopeMatrix`
+ * + `canWriteBack`. `token` is the plaintext capability used to build the
+ * copyable endpoint URL; it is revocable and rotatable.
+ */
+export const toolConnections = pgTable(
+  "tool_connections",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    memberId: uuid("member_id")
+      .notNull()
+      .references(() => members.id, { onDelete: "cascade" }),
+    tool: toolEnum("tool").notNull(),
+    label: text("label"),
+    token: text("token").notNull().unique(),
+    tokenHash: text("token_hash").notNull().unique(),
+    scopeMatrix: jsonb("scope_matrix").$type<ScopeMatrix>().default({}).notNull(),
+    canWriteBack: boolean("can_write_back").notNull().default(false),
+    status: connectionStatusEnum("status").notNull().default("active"),
+    lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  },
+  (t) => ({
+    memberIdx: index("tool_connections_member_idx").on(t.memberId),
+    tokenHashIdx: index("tool_connections_token_hash_idx").on(t.tokenHash),
+  }),
+);
+
 export type Member = typeof members.$inferSelect;
 export type NewMember = typeof members.$inferInsert;
 export type Source = typeof sources.$inferSelect;
@@ -239,3 +302,5 @@ export type LearningStyle = typeof learningStyles.$inferSelect;
 export type NewLearningStyle = typeof learningStyles.$inferInsert;
 export type Track = typeof tracks.$inferSelect;
 export type NewTrack = typeof tracks.$inferInsert;
+export type ToolConnection = typeof toolConnections.$inferSelect;
+export type NewToolConnection = typeof toolConnections.$inferInsert;

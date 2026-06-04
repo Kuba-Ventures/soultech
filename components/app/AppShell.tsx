@@ -10,10 +10,12 @@ import { Topbar } from "./Topbar";
  */
 export function AppShell({
   email,
+  name,
   percent,
   children,
 }: {
   email: string;
+  name?: string;
   percent: number;
   children: ReactNode;
 }) {
@@ -23,7 +25,7 @@ export function AppShell({
       <div className="grain" />
       <AppSidebar percent={percent} />
       <main className="main">
-        <Topbar email={email} />
+        <Topbar email={email} name={name} />
         <div className="wrap">{children}</div>
       </main>
     </div>
