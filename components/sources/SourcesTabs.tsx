@@ -8,22 +8,23 @@ import {
 } from "@/app/(app)/sources/actions";
 import type { SensitiveConsents } from "@/lib/profile/consent";
 import { onActivateKey } from "@/lib/ui/onActivateKey";
+import { BrandIcon } from "@/components/ui/BrandIcon";
 
 type Tab = "connect" | "forms" | "upl";
 
 const CONNECTORS = [
-  { name: "Google Drive", badge: "D", color: "#5b9bd5", blurb: "Your work, docs, how you organize knowledge.", linked: true },
-  { name: "Calendar", badge: "C", color: "#e6705a", blurb: "When you work, rest, and move." },
-  { name: "Gmail", badge: "G", color: "#d96a4a", blurb: "How you write and who matters." },
-  { name: "Spotify", badge: "S", color: "#5fbd6a", blurb: "Your taste and the moods behind it." },
-  { name: "LinkedIn", badge: "L", color: "#6a8fd4", blurb: "Your story and the arc so far." },
-  { name: "Letterboxd & Goodreads", badge: "M", color: "#a86fd1", blurb: "Films and books, your inner library." },
+  { name: "Google Drive", brand: "googledrive", badge: "D", color: "#1f6feb", blurb: "Your work, docs, how you organize knowledge.", linked: true },
+  { name: "Calendar", brand: "googlecalendar", badge: "C", color: "#1f6feb", blurb: "When you work, rest, and move." },
+  { name: "Gmail", brand: "gmail", badge: "G", color: "#c5221f", blurb: "How you write and who matters." },
+  { name: "Spotify", brand: "spotify", badge: "S", color: "#1db954", blurb: "Your taste and the moods behind it." },
+  { name: "LinkedIn", brand: "linkedin", badge: "L", color: "#0a66c2", blurb: "Your story and the arc so far." },
+  { name: "Letterboxd & Goodreads", brand: "letterboxd", badge: "M", color: "#2b3b4d", blurb: "Films and books, your inner library." },
 ];
 
-const SENSITIVE: Array<{ key: keyof SensitiveConsents; name: string; badge: string; color: string; blurb: string }> = [
-  { key: "health", name: "Apple Health / Oura", badge: "H", color: "#e84d6b", blurb: "Sleep, energy, your best hours." },
-  { key: "financial", name: "Bank / Plaid", badge: "B", color: "#4aa6c9", blurb: "What you value, read from where it goes." },
-  { key: "location", name: "Location timeline", badge: "T", color: "#7a8a99", blurb: "Where your life actually happens." },
+const SENSITIVE: Array<{ key: keyof SensitiveConsents; name: string; brand: string; badge: string; color: string; blurb: string }> = [
+  { key: "health", name: "Apple Health / Oura", brand: "apple", badge: "H", color: "#444", blurb: "Sleep, energy, your best hours." },
+  { key: "financial", name: "Bank / Plaid", brand: "plaid", badge: "B", color: "#4aa6c9", blurb: "What you value, read from where it goes." },
+  { key: "location", name: "Location timeline", brand: "location", badge: "T", color: "#7a8a99", blurb: "Where your life actually happens." },
 ];
 
 const IDEAS = [
@@ -85,7 +86,9 @@ function Connections({ initialConsents }: { initialConsents: SensitiveConsents }
           return (
             <div key={c.name} className={`c${isLinked ? " linked" : ""}`}>
               <div className="top">
-                <span className="lg" style={{ background: c.color }}>{c.badge}</span>
+                <span className="lg" style={{ background: c.color, color: "#fff" }}>
+                  <BrandIcon brand={c.brand} fallback={c.badge} />
+                </span>
                 <span className="cn">{c.name}</span>
               </div>
               <span className="te">{c.blurb}</span>
@@ -114,7 +117,9 @@ function Connections({ initialConsents }: { initialConsents: SensitiveConsents }
           return (
             <div key={c.key} className={`c gated${on ? " consented" : ""}`}>
               <div className="top">
-                <span className="lg" style={{ background: c.color }}>{c.badge}</span>
+                <span className="lg" style={{ background: c.color, color: "#fff" }}>
+                  <BrandIcon brand={c.brand} fallback={c.badge} />
+                </span>
                 <span className="cn">{c.name}</span>
                 <span className="soon">Consent</span>
               </div>
