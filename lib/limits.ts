@@ -1,6 +1,6 @@
 import { and, count, eq, gte, inArray } from "drizzle-orm";
 import { getDb } from "@/lib/db/client";
-import { conversations, messages, sources } from "@/lib/db/schema";
+import { auditLog, conversations, messages, sources } from "@/lib/db/schema";
 import { AppError } from "@/lib/errors";
 
 /**
@@ -11,7 +11,34 @@ import { AppError } from "@/lib/errors";
 
 export const DAILY_MEMBER_MESSAGE_LIMIT = 200;
 export const DAILY_UPLOAD_COUNT_LIMIT = 25;
+export const DAILY_MCP_WRITE_LIMIT = 200;
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Cap write-back from connected tools (MCP save_memory / advance_track) so a
+ * compromised or runaway client can't drive unbounded embedding cost + DB
+ * growth on the public endpoint. Counts MCP write audit rows in the last day.
+ */
+export async function enforceMcpWriteLimit(memberId: string): Promise<void> {
+  const since = new Date(Date.now() - DAY_MS);
+  const db = getDb();
+  const rows = await db
+    .select({ n: count() })
+    .from(auditLog)
+    .where(
+      and(
+        eq(auditLog.memberId, memberId),
+        inArray(auditLog.action, ["mcp.save_memory", "mcp.advance_track"]),
+        gte(auditLog.createdAt, since),
+      ),
+    );
+  if (Number(rows[0]?.n ?? 0) >= DAILY_MCP_WRITE_LIMIT) {
+    throw new AppError(
+      "rate_limited",
+      `Daily write-back limit reached (${DAILY_MCP_WRITE_LIMIT}). Connected tools can write again tomorrow.`,
+    );
+  }
+}
 
 export async function enforceMessageLimit(memberId: string): Promise<void> {
   const since = new Date(Date.now() - DAY_MS);

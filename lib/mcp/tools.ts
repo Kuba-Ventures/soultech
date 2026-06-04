@@ -10,7 +10,10 @@ import { getLearningStyle } from "@/lib/db/learningStyle";
 import { listActiveTracks, advanceTrack } from "@/lib/db/tracks";
 import { createMemory } from "@/lib/db/memories";
 import { searchMemories } from "@/lib/retrieval/search";
+import { enforceMcpWriteLimit } from "@/lib/limits";
 import { requireScope } from "./scope";
+
+const MAX_MEMORY_BODY = 4000;
 
 export type ToolContext = {
   connection: ToolConnection;
@@ -128,7 +131,8 @@ export const TOOLS: McpTool[] = [
     },
     handler: async ({ connection, memberId, consents }, args) => {
       requireScope(connection, "memories", "write", consents);
-      const body = str(args.body).trim();
+      await enforceMcpWriteLimit(memberId);
+      const body = str(args.body).trim().slice(0, MAX_MEMORY_BODY);
       if (!body) throw new Error("save_memory requires a non-empty body.");
       const type = (MEMORY_TYPES as readonly string[]).includes(str(args.type))
         ? (str(args.type) as (typeof MEMORY_TYPES)[number])
@@ -163,12 +167,16 @@ export const TOOLS: McpTool[] = [
     },
     handler: async ({ connection, memberId, consents }, args) => {
       requireScope(connection, "tracks", "write", consents);
+      await enforceMcpWriteLimit(memberId);
       const name = str(args.name).trim();
-      const delta = Number(args.delta);
+      const rawDelta = Number(args.delta);
       const reason = str(args.reason).trim() || "advanced via connected tool";
-      if (!name || !Number.isFinite(delta)) {
+      if (!name || !Number.isFinite(rawDelta)) {
         throw new Error("advance_track requires a track name and numeric delta.");
       }
+      // Clamp to a small forward step: a connected model can't regress progress
+      // or jump a track in one call.
+      const delta = Math.min(0.25, Math.max(0, rawDelta));
       const updated = await advanceTrack(memberId, name, delta, reason, "mcp");
       if (!updated) {
         return { ok: false, error: `No active track named "${name}".` };
