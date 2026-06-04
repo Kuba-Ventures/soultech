@@ -3,6 +3,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { getDb } from "./client";
 import {
   toolConnections,
+  type ScopeCategory,
   type ScopeMatrix,
   type ToolConnection,
 } from "./schema";
@@ -84,6 +85,36 @@ export function mcpEndpointUrl(token: string, origin?: string): string {
     process.env.NEXT_PUBLIC_SITE_URL ||
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
   return `${base}/api/mcp/${token}`;
+}
+
+/** Toggle one read/write cell on the member's primary connection scope. */
+export async function setPrimaryScope(
+  memberId: string,
+  category: ScopeCategory,
+  mode: "read" | "write",
+  value: boolean,
+): Promise<ScopeMatrix> {
+  const conn = await getOrCreatePrimaryConnection(memberId);
+  const matrix: ScopeMatrix = { ...(conn.scopeMatrix as ScopeMatrix) };
+  const current = matrix[category] ?? { read: false, write: false };
+  matrix[category] = { ...current, [mode]: value };
+  await getDb()
+    .update(toolConnections)
+    .set({ scopeMatrix: matrix })
+    .where(eq(toolConnections.id, conn.id));
+  return matrix;
+}
+
+/** Master write-back gate for the member's primary connection. */
+export async function setPrimaryWriteBack(
+  memberId: string,
+  value: boolean,
+): Promise<void> {
+  const conn = await getOrCreatePrimaryConnection(memberId);
+  await getDb()
+    .update(toolConnections)
+    .set({ canWriteBack: value })
+    .where(eq(toolConnections.id, conn.id));
 }
 
 /** Rotate a connection's token (invalidates the old endpoint URL). */

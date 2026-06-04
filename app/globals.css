@@ -841,6 +841,28 @@ body {
 .app .sw.on::after { left: 17.5px; background: var(--amber); }
 .app .sw.lock { opacity: 0.4; cursor: not-allowed; background: rgba(245, 238, 227, 0.06); }
 
+.app .writeback {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: var(--surface);
+  max-width: 820px;
+  margin-bottom: 12px;
+}
+.app .writeback .wb-h { font-weight: 600; font-size: 14px; }
+.app .writeback .wb-s {
+  font-size: 12px;
+  color: var(--t-faint);
+  margin-top: 3px;
+  max-width: 560px;
+  line-height: 1.4;
+}
+.app .writeback .sw { margin: 0; flex: none; }
+
 .app .consent {
   font-family: var(--font-mono);
   font-size: 10.5px;

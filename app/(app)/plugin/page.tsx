@@ -6,7 +6,7 @@ import {
 import { MemoryFlowDemo } from "@/components/plugin/MemoryFlowDemo";
 import { EndpointCard } from "@/components/plugin/EndpointCard";
 import { ConnectorGrid } from "@/components/plugin/ConnectorGrid";
-import { ScopeMatrix } from "@/components/plugin/ScopeMatrix";
+import { ScopeControls } from "@/components/plugin/ScopeControls";
 
 export const dynamic = "force-dynamic";
 
@@ -44,9 +44,12 @@ export default async function PluginPage() {
       <ConnectorGrid />
 
       <div className="sect">
-        What each tool can see and write<span className="ln" />
+        What your tools can see and write<span className="ln" />
       </div>
-      <ScopeMatrix />
+      <ScopeControls
+        initialMatrix={connection.scopeMatrix}
+        initialWriteBack={connection.canWriteBack}
+      />
       <div className="consent rise">
         Sensitive categories stay locked until you turn them on per tool.
         Nothing in that row leaves your brain by default.
