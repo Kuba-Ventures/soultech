@@ -9,6 +9,7 @@ import {
   setSensitiveConsent,
   type SensitiveCategory,
 } from "@/lib/profile/consent";
+import { inferLearningStyle } from "@/lib/learning/infer";
 import { logAudit } from "@/lib/audit";
 
 /** Grant or revoke consent for a sensitive category (unlocks it for the MCP server). */
@@ -58,6 +59,10 @@ export async function saveQuestionnaireAction(
     targetId: slug,
     details: { fields: Object.keys(answers).length },
   });
+  // The learning questionnaire feeds the /learn learning-style card.
+  if (slug === "learning_style") {
+    await inferLearningStyle(member.id);
+  }
   revalidatePath("/sources");
   revalidatePath("/learn");
   return { ok: true };

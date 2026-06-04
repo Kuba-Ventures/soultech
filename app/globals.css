@@ -935,6 +935,82 @@ body {
 .app .toast .ti svg { width: 15px; height: 15px; }
 .app .toast b { color: var(--cool-soft); }
 
+/* ---- chat (Phase 3b) ---- */
+.app .thread { display: flex; flex-direction: column; gap: 16px; max-width: 760px; }
+.app .a {
+  align-self: flex-end;
+  max-width: 74%;
+  border-radius: 14px 4px 14px 14px;
+  padding: 13px 17px;
+  background: rgba(245, 238, 227, 0.05);
+  font-size: 14.5px;
+  white-space: pre-wrap;
+}
+.app .a.clone {
+  border: 1px solid rgba(121, 198, 212, 0.28);
+  background: linear-gradient(180deg, rgba(121, 198, 212, 0.07), rgba(121, 198, 212, 0.02));
+  align-self: flex-start;
+  max-width: 82%;
+  border-radius: 4px 14px 14px 14px;
+}
+.app .a.clone .lab {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--cool);
+  margin-bottom: 6px;
+}
+.app .saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ok);
+  border: 1px solid rgba(127, 201, 154, 0.3);
+  border-radius: 8px;
+  padding: 4px 9px;
+  margin: 9px 6px 0 0;
+  background: rgba(127, 201, 154, 0.07);
+}
+.app .saved svg { width: 12px; height: 12px; }
+.app .saved b { color: var(--text); font-weight: 500; }
+.app .composer {
+  margin-top: 24px;
+  border: 1px solid var(--line-2);
+  border-radius: 16px;
+  background: var(--surface);
+  padding: 15px 17px;
+  max-width: 760px;
+}
+.app .composer textarea {
+  width: 100%;
+  min-height: 64px;
+  resize: none;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+}
+.app .composer textarea::placeholder { color: var(--t-faint); }
+.app .composer .crow { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; gap: 12px; }
+.app .composer .hint { font-family: var(--font-mono); font-size: 10.5px; color: var(--t-faint); }
+.app .typing { display: inline-flex; gap: 4px; }
+.app .typing span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cool);
+  opacity: 0.5;
+  animation: pulseSoft 1.2s ease-in-out infinite;
+}
+.app .typing span:nth-child(2) { animation-delay: 0.15s; }
+.app .typing span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes pulseSoft { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+
 /* ---- sources (Phase 3b) ---- */
 .app .tabs {
   display: flex;
