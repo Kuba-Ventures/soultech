@@ -22,10 +22,12 @@ export function CloneChat({ initialMessages }: { initialMessages: Msg[] }) {
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const listRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
+  // The scroll container is the page (.main), not the thread, so scroll a
+  // bottom sentinel into view to keep the latest message + composer visible.
   useEffect(() => {
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
+    bottomRef.current?.scrollIntoView({ block: "end" });
   }, [messages, pending]);
 
   async function submit() {
@@ -117,7 +119,7 @@ export function CloneChat({ initialMessages }: { initialMessages: Msg[] }) {
 
   return (
     <>
-      <div className="thread rise" ref={listRef}>
+      <div className="thread rise">
         {messages.map((m) =>
           m.role === "member" ? (
             <div key={m.id} style={{ alignSelf: "flex-end", maxWidth: "82%" }}>
@@ -174,6 +176,7 @@ export function CloneChat({ initialMessages }: { initialMessages: Msg[] }) {
           </button>
         </div>
       </div>
+      <div ref={bottomRef} aria-hidden="true" />
     </>
   );
 }

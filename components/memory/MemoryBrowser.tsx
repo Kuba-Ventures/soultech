@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { redactMemoryAction } from "@/app/(app)/memory/actions";
+import { onActivateKey } from "@/lib/ui/onActivateKey";
 
 export type MemoryItem = {
   id: string;
@@ -54,7 +55,9 @@ export function MemoryBrowser({ items }: { items: MemoryItem[] }) {
             className={`chip${filter === f.key ? " on" : ""}`}
             role="button"
             tabIndex={0}
+            aria-pressed={filter === f.key}
             onClick={() => setFilter(f.key)}
+            onKeyDown={onActivateKey(() => setFilter(f.key))}
           >
             {f.label}
           </span>
