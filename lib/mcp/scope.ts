@@ -31,11 +31,12 @@ export function requireScope(
   connection: ToolConnection,
   category: ScopeCategory,
   mode: "read" | "write",
+  consents?: Partial<Record<ScopeCategory, boolean>>,
 ): void {
-  if (isSensitive(category)) {
+  if (isSensitive(category) && !consents?.[category]) {
     throw new ScopeError(
       -32002,
-      `Sensitive category '${category}' is locked and requires explicit consent.`,
+      `Sensitive category '${category}' is locked. Grant consent under Sources first.`,
     );
   }
   const matrix = connection.scopeMatrix as ScopeMatrix;
