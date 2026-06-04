@@ -37,6 +37,15 @@ export const sourceStatusEnum = pgEnum("source_status", [
 
 export const messageRoleEnum = pgEnum("message_role", ["member", "clone"]);
 
+// Semantic type of a memory, shown as a chip on /memory and set by chat
+// auto-save and the MCP save_memory tool. Defaults to MEMORY (safe migration).
+export const memoryTypeEnum = pgEnum("memory_type", [
+  "FACT",
+  "PLAN",
+  "MEMORY",
+  "PREFERENCE",
+]);
+
 export const auditActorEnum = pgEnum("audit_actor", ["member", "system"]);
 
 // Soultech v4 (learn-first): a learner's level on a skill track.
@@ -108,6 +117,9 @@ export const memories = pgTable(
     content: text("content").notNull(),
     contentSummary: text("content_summary").notNull(),
     embedding: vector("embedding", { dimensions: 1024 }).notNull(),
+    type: memoryTypeEnum("type").notNull().default("MEMORY"),
+    typeConfidence: real("type_confidence"),
+    typeSource: text("type_source"),
     occurredAt: timestamp("occurred_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}).notNull(),
@@ -117,6 +129,7 @@ export const memories = pgTable(
   (t) => ({
     memberIdx: index("memories_member_idx").on(t.memberId),
     sourceIdx: index("memories_source_idx").on(t.sourceId),
+    typeIdx: index("memories_member_type_idx").on(t.memberId, t.type),
     // HNSW index for cosine distance, the default we'll use for retrieval.
     embeddingIdx: index("memories_embedding_idx")
       .using("hnsw", t.embedding.op("vector_cosine_ops")),
