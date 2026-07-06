@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { onActivateKey } from "@/lib/ui/onActivateKey";
+import { BrandIcon } from "@/components/ui/BrandIcon";
 
 type Connector = {
   key: string;
+  brand: string;
   name: string;
   badge: string;
   badgeColor: string;
@@ -14,12 +17,12 @@ type Connector = {
 };
 
 const CONNECTORS: Connector[] = [
-  { key: "claude", name: "Claude", badge: "C", badgeColor: "#d97a4a", blurb: "Answers with your context and learns you back.", cta: "Add to Claude", done: "✓ Added", featured: true },
-  { key: "cursor", name: "Claude Code / Cursor", badge: "⌘", badgeColor: "#7a8a99", blurb: "Your terminal and editor know your stack and prompts.", cta: "Connect", done: "✓ Connected" },
-  { key: "chatgpt", name: "ChatGPT", badge: "O", badgeColor: "#5fbd8a", blurb: "Carry your profile in via custom connector.", cta: "Connect", done: "✓ Connected" },
-  { key: "notion", name: "Notion", badge: "N", badgeColor: "#cfcfcf", blurb: "Drafts written in your voice.", cta: "Connect", done: "✓ Connected" },
-  { key: "raycast", name: "Raycast", badge: "R", badgeColor: "#7a5fd4", blurb: "Summon your clone from anywhere on the Mac.", cta: "Connect", done: "✓ Connected" },
-  { key: "api", name: "API / webhook", badge: "{ }", badgeColor: "#4aa6c9", blurb: "Build your own surface on top of you.", cta: "Get keys", done: "✓ Issued" },
+  { key: "claude", brand: "claude", name: "Claude", badge: "C", badgeColor: "#d97a4a", blurb: "Answers with your context and learns you back.", cta: "Add to Claude", done: "✓ Added", featured: true },
+  { key: "cursor", brand: "cursor", name: "Claude Code / Cursor", badge: "⌘", badgeColor: "#3a3a40", blurb: "Your terminal and editor know your stack and prompts.", cta: "Connect", done: "✓ Connected" },
+  { key: "chatgpt", brand: "chatgpt", name: "ChatGPT", badge: "O", badgeColor: "#10a37f", blurb: "Carry your profile in via custom connector.", cta: "Connect", done: "✓ Connected" },
+  { key: "notion", brand: "notion", name: "Notion", badge: "N", badgeColor: "#2f2f2f", blurb: "Drafts written in your voice.", cta: "Connect", done: "✓ Connected" },
+  { key: "raycast", brand: "raycast", name: "Raycast", badge: "R", badgeColor: "#ff6363", blurb: "Summon your clone from anywhere on the Mac.", cta: "Connect", done: "✓ Connected" },
+  { key: "api", brand: "api", name: "API / webhook", badge: "{ }", badgeColor: "#4aa6c9", blurb: "Build your own surface on top of you.", cta: "Get keys", done: "✓ Issued" },
 ];
 
 /**
@@ -36,8 +39,8 @@ export function ConnectorGrid() {
         return (
           <div key={c.key} className={`c${c.featured ? " feat" : ""}${isLinked ? " linked" : ""}`}>
             <div className="top">
-              <span className="lg" style={{ background: c.badgeColor }}>
-                {c.badge}
+              <span className="lg" style={{ background: c.badgeColor, color: "#fff" }}>
+                <BrandIcon brand={c.brand} fallback={c.badge} />
               </span>
               <span className="cn">{c.name}</span>
             </div>
@@ -47,6 +50,9 @@ export function ConnectorGrid() {
               role="button"
               tabIndex={0}
               onClick={() => setLinked((p) => ({ ...p, [c.key]: true }))}
+              onKeyDown={onActivateKey(() =>
+                setLinked((p) => ({ ...p, [c.key]: true })),
+              )}
             >
               {isLinked ? c.done : c.cta}
             </span>

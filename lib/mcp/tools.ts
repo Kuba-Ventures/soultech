@@ -1,14 +1,25 @@
 import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db/client";
-import { members, type ToolConnection } from "@/lib/db/schema";
+import {
+  members,
+  type ScopeCategory,
+  type ToolConnection,
+} from "@/lib/db/schema";
 import { getProfileCompleteness } from "@/lib/profile/completeness";
 import { getLearningStyle } from "@/lib/db/learningStyle";
 import { listActiveTracks, advanceTrack } from "@/lib/db/tracks";
 import { createMemory } from "@/lib/db/memories";
 import { searchMemories } from "@/lib/retrieval/search";
+import { enforceMcpWriteLimit } from "@/lib/limits";
 import { requireScope } from "./scope";
 
-export type ToolContext = { connection: ToolConnection; memberId: string };
+const MAX_MEMORY_BODY = 4000;
+
+export type ToolContext = {
+  connection: ToolConnection;
+  memberId: string;
+  consents?: Partial<Record<ScopeCategory, boolean>>;
+};
 type JsonSchema = Record<string, unknown>;
 
 export type McpTool = {
@@ -30,8 +41,8 @@ export const TOOLS: McpTool[] = [
     description:
       "Get the owner's profile summary: identity and how complete their Soultech brain is.",
     inputSchema: { type: "object", properties: {} },
-    handler: async ({ connection, memberId }) => {
-      requireScope(connection, "profile", "read");
+    handler: async ({ connection, memberId, consents }) => {
+      requireScope(connection, "profile", "read", consents);
       const [m] = await getDb()
         .select({ email: members.email, createdAt: members.createdAt })
         .from(members)
@@ -53,8 +64,8 @@ export const TOOLS: McpTool[] = [
     description:
       "Get how the owner learns best (their distilled learning style and traits). Use this to tailor explanations and suggestions to them.",
     inputSchema: { type: "object", properties: {} },
-    handler: async ({ connection, memberId }) => {
-      requireScope(connection, "learning_style", "read");
+    handler: async ({ connection, memberId, consents }) => {
+      requireScope(connection, "learning_style", "read", consents);
       const style = await getLearningStyle(memberId);
       if (!style) return { present: false };
       return { present: true, summary: style.summary, traits: style.traits };
@@ -72,8 +83,8 @@ export const TOOLS: McpTool[] = [
       },
       required: ["query"],
     },
-    handler: async ({ connection, memberId }, args) => {
-      requireScope(connection, "memories", "read");
+    handler: async ({ connection, memberId, consents }, args) => {
+      requireScope(connection, "memories", "read", consents);
       const query = str(args.query);
       if (!query) return { results: [] };
       const limit = Math.min(20, Math.max(1, Number(args.limit) || 8));
@@ -93,8 +104,8 @@ export const TOOLS: McpTool[] = [
     description:
       "List the skills the owner is actively leveling up, with progress and the suggested next rep.",
     inputSchema: { type: "object", properties: {} },
-    handler: async ({ connection, memberId }) => {
-      requireScope(connection, "tracks", "read");
+    handler: async ({ connection, memberId, consents }) => {
+      requireScope(connection, "tracks", "read", consents);
       const tracks = await listActiveTracks(memberId);
       return {
         tracks: tracks.map((t) => ({
@@ -118,9 +129,10 @@ export const TOOLS: McpTool[] = [
       },
       required: ["type", "body"],
     },
-    handler: async ({ connection, memberId }, args) => {
-      requireScope(connection, "memories", "write");
-      const body = str(args.body).trim();
+    handler: async ({ connection, memberId, consents }, args) => {
+      requireScope(connection, "memories", "write", consents);
+      await enforceMcpWriteLimit(memberId);
+      const body = str(args.body).trim().slice(0, MAX_MEMORY_BODY);
       if (!body) throw new Error("save_memory requires a non-empty body.");
       const type = (MEMORY_TYPES as readonly string[]).includes(str(args.type))
         ? (str(args.type) as (typeof MEMORY_TYPES)[number])
@@ -153,14 +165,18 @@ export const TOOLS: McpTool[] = [
       },
       required: ["name", "delta", "reason"],
     },
-    handler: async ({ connection, memberId }, args) => {
-      requireScope(connection, "tracks", "write");
+    handler: async ({ connection, memberId, consents }, args) => {
+      requireScope(connection, "tracks", "write", consents);
+      await enforceMcpWriteLimit(memberId);
       const name = str(args.name).trim();
-      const delta = Number(args.delta);
+      const rawDelta = Number(args.delta);
       const reason = str(args.reason).trim() || "advanced via connected tool";
-      if (!name || !Number.isFinite(delta)) {
+      if (!name || !Number.isFinite(rawDelta)) {
         throw new Error("advance_track requires a track name and numeric delta.");
       }
+      // Clamp to a small forward step: a connected model can't regress progress
+      // or jump a track in one call.
+      const delta = Math.min(0.25, Math.max(0, rawDelta));
       const updated = await advanceTrack(memberId, name, delta, reason, "mcp");
       if (!updated) {
         return { ok: false, error: `No active track named "${name}".` };
