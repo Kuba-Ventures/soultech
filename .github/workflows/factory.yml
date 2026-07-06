@@ -67,37 +67,34 @@ jobs:
               3. Walk the escalation gates and decide APPROVE-LOWRISK or ESCALATE. When in
                  doubt, ESCALATE — this is a paying client's product.
 
-            Then take exactly these actions, IN THIS ORDER:
-              1. FIRST, write your decision as a single bare token to a file named
-                 `.factory-verdict` in the repository root — either `APPROVE-LOWRISK` or
-                 `ESCALATE` and nothing else. This file is how the gate is computed, so write
-                 it before anything else.
-              2. Post your review as a PR comment, ending with the exact VERDICT line
+            Then take exactly these actions:
+              1. Post your review as a PR comment, ending with the exact VERDICT line
                  (`VERDICT: APPROVE-LOWRISK` or `VERDICT: ESCALATE — <reason>`).
-              3. If APPROVE-LOWRISK: add the label `factory:lowrisk` to the PR.
-                 If ESCALATE: add the label `factory:escalate` to the PR.
+              2. Apply the verdict LABEL — this is how the merge gate is computed, so it is
+                 REQUIRED:
+                 - If APPROVE-LOWRISK: add label `factory:lowrisk` and remove `factory:escalate`.
+                 - If ESCALATE: add label `factory:escalate` and remove `factory:lowrisk`.
 
             Do NOT merge the PR under any circumstances.
 
       - name: Compute merge gate (fail-closed)
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          # GREEN if the reviewer ran and produced a recognized verdict (low-risk OR escalate),
-          # so escalated PRs stay human-mergeable without an admin override. RED (fail-closed)
-          # only when no real review happened — a missing verdict file means the action skipped
-          # (e.g. a PR touching .github/**), which must never count as a pass.
-          if [ ! -f .factory-verdict ]; then
-            echo "::error::No .factory-verdict written — the reviewer did not run (e.g. a PR that modifies .github/** which the Claude action skips by design). Failing closed; a human admin must review and override."
-            exit 1
+          # GREEN if the reviewer ran and applied a verdict label (low-risk OR escalate), so
+          # escalated PRs stay human-mergeable without an admin override. RED (fail-closed) when
+          # neither label is present — i.e. the review did not run (e.g. a PR touching .github/**
+          # that the Claude action skips). The label is set via the GitHub API by the reviewer,
+          # so it's reliable regardless of the action's working directory.
+          labels="$(gh pr view ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --json labels --jq '[.labels[].name] | join(",")')"
+          echo "PR labels: ${labels}"
+          if printf '%s' "$labels" | grep -q 'factory:lowrisk'; then
+            echo "APPROVE-LOWRISK — low-risk; eligible for auto-merge."
+            exit 0
           fi
-          verdict="$(tr -d '[:space:]' < .factory-verdict)"
-          echo "Reviewer verdict: '${verdict}'"
-          case "$verdict" in
-            APPROVE-LOWRISK)
-              echo "APPROVE-LOWRISK — low-risk; eligible for auto-merge." ;;
-            ESCALATE)
-              echo "ESCALATE — reviewed and flagged for a human. Mergeable by a person; will not auto-merge." ;;
-            *)
-              echo "::error::Unrecognized verdict '${verdict}' — failing closed."
-              exit 1 ;;
-          esac
-          exit 0
+          if printf '%s' "$labels" | grep -q 'factory:escalate'; then
+            echo "ESCALATE — reviewed and flagged for a human. Mergeable by a person; will not auto-merge."
+            exit 0
+          fi
+          echo "::error::No factory verdict label applied — the reviewer did not run (e.g. a PR that modifies .github/** which the Claude action skips). Failing closed; a human admin must review and override."
+          exit 1
