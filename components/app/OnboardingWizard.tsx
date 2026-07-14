@@ -8,19 +8,33 @@ import {
   wizardPasteImport,
   wizardUploadDoc,
 } from "@/app/welcome/actions";
+import { BrandIcon } from "@/components/ui/BrandIcon";
 
 type Props = { initialCount: number };
 
 const STEPS = ["Welcome", "Paste", "Upload", "Connect", "Done"] as const;
 
+// Kinds of documents worth uploading — shown as examples on the upload step.
+const UPLOAD_EXAMPLES = [
+  "Memos",
+  "Writing samples",
+  "Work portfolio",
+  "Cover letters",
+  "Journal entries",
+  "Meeting notes",
+  "Essays",
+  "Slack exports",
+];
+
 // Connector tiles are visual-only for now — real OAuth isn't built yet.
+// `brand` keys map to real logos via BrandIcon (simple-icons).
 const CONNECTORS = [
-  "Google Drive",
-  "Gmail",
-  "Notion",
-  "Google Calendar",
-  "Slack",
-  "Spotify",
+  { name: "Google Drive", brand: "googledrive" },
+  { name: "Gmail", brand: "gmail" },
+  { name: "Notion", brand: "notion" },
+  { name: "Google Calendar", brand: "googlecalendar" },
+  { name: "LinkedIn", brand: "linkedin" },
+  { name: "Spotify", brand: "spotify" },
 ];
 
 export function OnboardingWizard({ initialCount }: Props) {
@@ -145,6 +159,10 @@ export function OnboardingWizard({ initialCount }: Props) {
             <button type="button" onClick={copyPrompt} className={`${ghost} mt-4`}>
               {copied ? "Copied ✓" : "Copy the prompt"}
             </button>
+            <pre className="mt-4 max-h-56 overflow-auto whitespace-pre-wrap rounded-lg border border-[var(--line)] bg-black/20 p-4 font-mono text-xs leading-relaxed text-[var(--t-dim)]">
+              {EXTRACTION_PROMPT}
+            </pre>
+            <p className="mt-4 text-sm text-[var(--t-dim)]">Then paste the result below.</p>
             <textarea
               value={raw}
               onChange={(e) => setRaw(e.target.value)}
@@ -170,6 +188,16 @@ export function OnboardingWizard({ initialCount }: Props) {
               Add things you&apos;ve written: notes, essays, docs. Soultech reads how you
               write and reason into your profile. .txt, .md, or .pdf.
             </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {UPLOAD_EXAMPLES.map((ex) => (
+                <span
+                  key={ex}
+                  className="rounded-full border border-[var(--line-2)] bg-[var(--surface)] px-3 py-1 text-xs text-[var(--t-dim)]"
+                >
+                  {ex}
+                </span>
+              ))}
+            </div>
             <input
               ref={fileRef}
               type="file"
@@ -192,11 +220,16 @@ export function OnboardingWizard({ initialCount }: Props) {
             <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
               {CONNECTORS.map((c) => (
                 <div
-                  key={c}
+                  key={c.name}
                   aria-disabled
-                  className="flex items-center justify-between rounded-lg border border-[var(--line)] bg-[var(--surface)] px-3 py-3 text-sm text-[var(--t-dim)] opacity-70"
+                  className="flex items-center justify-between gap-2 rounded-lg border border-[var(--line)] bg-[var(--surface)] px-3 py-3 text-sm text-[var(--t-dim)] opacity-70"
                 >
-                  <span>{c}</span>
+                  <span className="flex items-center gap-2.5">
+                    <span className="text-[var(--text)]">
+                      <BrandIcon brand={c.brand} size={18} fallback={c.name[0]} />
+                    </span>
+                    {c.name}
+                  </span>
                   <span className="rounded-full border border-[var(--line-2)] px-2 py-0.5 text-[10px] uppercase tracking-wide text-[var(--t-faint)]">
                     Soon
                   </span>
