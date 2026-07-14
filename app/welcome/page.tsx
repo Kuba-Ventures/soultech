@@ -11,17 +11,24 @@ export const dynamic = "force-dynamic";
  * or skipped the wizard (or already has a profile from before it existed), we
  * send them straight to the dashboard so this only shows on the first run.
  */
-export default async function WelcomePage() {
+export default async function WelcomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ restart?: string }>;
+}) {
   const { userId } = await auth();
   if (!userId) redirect("/sign-in");
 
+  const { restart } = await searchParams;
   const member = await getCurrentMember();
   const [done, profile] = await Promise.all([
     isOnboardingV1Done(member.id),
     getProfile(member.id),
   ]);
 
-  if (done || (profile?.items.length ?? 0) > 0) {
+  // "Restart onboarding" (from settings) forces the wizard even if a profile
+  // already exists; otherwise it only shows on a true first run.
+  if (!restart && (done || (profile?.items.length ?? 0) > 0)) {
     redirect("/profile");
   }
 
