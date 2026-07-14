@@ -174,3 +174,42 @@ export async function deleteAllProfile(memberId: string): Promise<void> {
   delete next[SETTINGS_KEY];
   await db.update(members).set({ settings: next }).where(eq(members.id, memberId));
 }
+
+/**
+ * Merge freshly parsed items into the member's existing profile (append, don't
+ * replace). Used by the multi-step onboarding wizard, where paste + uploads
+ * each add to the same profile.
+ */
+export async function appendParsedProfile(
+  memberId: string,
+  parsed: ParsedItem[],
+): Promise<Profile> {
+  const existing = await getProfile(memberId);
+  const base = existing?.items ?? [];
+  const added: ProfileItem[] = parsed.map((p) => ({
+    id: randomUUID(),
+    category: p.category,
+    content: p.content,
+    source: p.source,
+    ...(p.frequency != null ? { frequency: p.frequency } : {}),
+  }));
+  return persistItems(memberId, [...base, ...added]);
+}
+
+// First-run onboarding flag. Set once the member finishes or skips the wizard,
+// so we don't re-gate them on every sign-in.
+const ONBOARDING_KEY = "onboardingV1Done";
+
+export async function isOnboardingV1Done(memberId: string): Promise<boolean> {
+  const settings = await readSettings(memberId);
+  return settings[ONBOARDING_KEY] === true;
+}
+
+export async function markOnboardingV1Done(memberId: string): Promise<void> {
+  const db = getDb();
+  const settings = await readSettings(memberId);
+  await db
+    .update(members)
+    .set({ settings: { ...settings, [ONBOARDING_KEY]: true } })
+    .where(eq(members.id, memberId));
+}

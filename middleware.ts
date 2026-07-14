@@ -10,6 +10,7 @@ const isProtectedRoute = createRouteMatcher([
   "/sources(.*)",
   "/settings(.*)",
   "/import(.*)",
+  "/welcome(.*)",
   "/portal(.*)",
 ]);
 
