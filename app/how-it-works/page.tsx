@@ -30,10 +30,11 @@ function Intro() {
           How it learns the way you think.
         </h1>
         <p className="mt-6 text-lg text-white/65 leading-relaxed">
-          Four steps. Voice first, data optional, you in control of all of it.
+          Four steps. Bring what your other AI already knows about you, shape it,
+          and start talking. You control all of it.
         </p>
         <p className="mt-3 text-sm text-white/40">
-          Local-first by default. Anything you connect is encrypted and revocable.
+          Your profile is isolated to your account, encrypted, editable, and deletable.
         </p>
       </div>
     </section>
@@ -50,30 +51,30 @@ type Step = {
 const steps: Step[] = [
   {
     index: "01",
-    title: "Train your voice",
+    title: "Bring your profile in",
     body:
-      "Short conversational sessions teach Soultech the vocabulary you reach for, the analogies you keep using, and the way you structure an idea. You're not filling out a profile. You're talking, and it's listening for pattern.",
+      "Paste a self-portrait the ChatGPT or Claude you already use can write from a prompt we give you, or upload your own notes and docs. No integrations, no permissions wall, no training grind.",
     icon: <WaveformIcon />,
   },
   {
     index: "02",
-    title: "Connect what helps (optional)",
+    title: "See who it thinks you are",
     body:
-      "Plug in your calendar, docs, notes, or email if you want richer context. Connections are explicit and revocable. Your data stays encrypted and under your control. Nothing leaves your account unless you say so.",
+      "Soultech reads it into a structured model of how you communicate, think, and learn, organized into ten categories. Every item shows where it came from, so you can see why it believes something.",
     icon: <NodesIcon />,
   },
   {
     index: "03",
-    title: "Talk to a partner that thinks like you",
+    title: "Chat, calibrated to you",
     body:
-      "Ask anything. Explanations come back in your analogies, questions in the shape you'd frame them. Each session sharpens the model's read on how you actually reason.",
+      "Ask anything. Your profile is compiled into every answer, so explanations come back in your analogies, at your depth, in the shape you'd frame them.",
     icon: <ChatIcon />,
   },
   {
     index: "04",
-    title: "It grows with you",
+    title: "It stays yours, and grows",
     body:
-      "Your thinking shifts. The model shifts with it. As your vocabulary, references, and priorities evolve, Soultech notices and adjusts how it talks back.",
+      "Edit anything that's off, add what's missing, delete what you don't want it to know. It's isolated to your account, encrypted, and never used to train anyone else's model. The more you refine it, the sharper it gets.",
     icon: <GrowthIcon />,
   },
 ];
@@ -119,15 +120,15 @@ function WhatItIsnt() {
   const items = [
     {
       label: "Not a general chatbot.",
-      body: "It learns from you, not from the average internet user.",
+      body: "It reasons from your profile, not from the average internet user.",
     },
     {
-      label: "Not a notetaker or recorder.",
-      body: "Soultech doesn't capture meetings. It captures how you think.",
+      label: "Not a black box.",
+      body: "You can see, edit, and delete every item, and see where each one came from.",
     },
     {
       label: "Not an AI clone.",
-      body: "A partner that reflects how you reason, not a copy of you.",
+      body: "A partner calibrated to how you reason, not a copy of you.",
     },
   ];
 

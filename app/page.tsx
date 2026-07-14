@@ -8,9 +8,95 @@ export default function Page() {
     <main className="relative">
       <SiteHeader />
       <Hero />
+      <HowItWorks />
       <Waitlist />
       <SiteFooter />
     </main>
+  );
+}
+
+const howItWorksSteps = [
+  {
+    step: "01",
+    title: "Bring your profile in",
+    body: "Paste a self-portrait the ChatGPT or Claude you already use can write, or upload your own docs. No integrations, no setup.",
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M12 3v12M8 11l4 4 4-4M5 21h14" />
+      </svg>
+    ),
+  },
+  {
+    step: "02",
+    title: "See who it thinks you are",
+    body: "Soultech reads it into a structured, ten-category model of how you communicate, think, and learn. Every item shows where it came from. Edit, add, or delete anything.",
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4 21c0-4 4-6 8-6s8 2 8 6" />
+      </svg>
+    ),
+  },
+  {
+    step: "03",
+    title: "Chat, calibrated to you",
+    body: "That model sits behind every answer, so explanations come back in your analogies, at your depth, in your style, not the internet's average.",
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" />
+      </svg>
+    ),
+  },
+];
+
+function HowItWorks() {
+  return (
+    <section className="hairline-b">
+      <div className="mx-auto max-w-6xl px-6 py-20 sm:py-24">
+        <div className="max-w-xl">
+          <div className="text-xs uppercase tracking-[0.18em] text-white/40">How it works</div>
+          <h2 className="mt-3 text-3xl sm:text-4xl font-medium tracking-[-0.02em]">
+            From who you are to how it answers.
+          </h2>
+          <p className="mt-4 text-white/60 leading-relaxed">
+            No training grind and no permissions wall. Bring what your other AI
+            already knows about you, and start talking.
+          </p>
+        </div>
+
+        <div className="mt-12 grid gap-5 sm:gap-6 md:grid-cols-3">
+          {howItWorksSteps.map((s, i) => (
+            <div
+              key={s.step}
+              className="rounded-2xl hairline bg-ink-soft/40 p-6 animate-fade-up"
+              style={{ animationDelay: `${i * 80}ms` }}
+            >
+              <div className="h-12 w-12 rounded-xl hairline bg-gradient-to-br from-indigo-500/15 to-fuchsia-500/10 flex items-center justify-center text-white/80">
+                {s.icon}
+              </div>
+              <div className="mt-5 text-[11px] uppercase tracking-[0.18em] text-white/40 font-mono">
+                Step {s.step}
+              </div>
+              <h3 className="mt-1.5 text-lg font-medium tracking-[-0.01em]">{s.title}</h3>
+              <p className="mt-2.5 text-sm text-white/60 leading-relaxed">{s.body}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-10 flex flex-wrap items-center gap-3">
+          <Link
+            href="/how-it-works"
+            className="inline-flex items-center justify-center rounded-full hairline text-white/80 px-5 py-3 text-sm hover:text-white hover:border-white/20 transition"
+          >
+            See how it works in detail
+          </Link>
+          <span className="text-sm text-white/40">
+            Your profile stays yours: encrypted, editable, deletable, and never used to
+            train anyone else&rsquo;s model.
+          </span>
+        </div>
+      </div>
+    </section>
   );
 }
 
