@@ -9,6 +9,7 @@ const isProtectedRoute = createRouteMatcher([
   "/memory(.*)",
   "/sources(.*)",
   "/settings(.*)",
+  "/import(.*)",
   "/portal(.*)",
 ]);
 
