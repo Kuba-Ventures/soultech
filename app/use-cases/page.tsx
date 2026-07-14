@@ -96,12 +96,13 @@ function Intro() {
           What people are using it for.
         </h1>
         <p className="mt-6 text-lg text-white/65 leading-relaxed">
-          Soultech is built for learning and thinking, not task management. A
-          handful of the shapes that work well so far.
+          Soultech is built for learning and thinking, not task management. Each
+          answer is shaped by your profile. A handful of the shapes that work
+          well so far.
         </p>
         <p className="mt-3 text-sm text-white/40">
-          Everything you train stays yours. Encrypted, revocable, and never used
-          to train anyone else's model.
+          Everything in your profile stays yours. Encrypted, editable, deletable,
+          and never used to train anyone else's model.
         </p>
       </div>
     </section>
