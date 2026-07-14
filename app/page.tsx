@@ -28,8 +28,10 @@ function Hero() {
           </h1>
 
           <p className="mt-6 max-w-xl text-lg text-white/65 leading-relaxed">
-            Train a personal AI on your voice, your thinking, your style.
-            Get unstuck faster, in a way that actually makes sense to you.
+            Soultech imports a structured, ten-category model of how you
+            communicate, think, and learn from the ChatGPT or Claude you already
+            use. It sits behind every answer, so the reasoning actually makes
+            sense to you.
           </p>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -47,6 +49,12 @@ function Hero() {
               className="inline-flex items-center justify-center rounded-full hairline text-white/80 px-5 py-3 text-sm hover:text-white hover:border-white/20 transition"
             >
               See how it works
+            </Link>
+            <Link
+              href="/sign-in"
+              className="inline-flex items-center justify-center px-3 py-3 text-sm text-white/55 hover:text-white transition"
+            >
+              Log in
             </Link>
           </div>
         </div>
@@ -69,7 +77,8 @@ function Waitlist() {
             Be early. Help shape it.
           </h2>
           <p className="mt-4 text-white/60">
-            We&rsquo;re inviting a small group to train the first generation of personal AIs.
+            We&rsquo;re inviting a small group to import their profile first and tell us
+            what the model gets wrong.
           </p>
         </div>
 

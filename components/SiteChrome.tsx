@@ -20,6 +20,9 @@ export function SiteHeader() {
           >
             Use cases
           </Link>
+          <Link href="/sign-in" className="hover:text-black transition">
+            Log in
+          </Link>
           <Link
             href="/#waitlist"
             className="rounded-full bg-black text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800 transition"
