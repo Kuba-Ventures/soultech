@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  resetChatsAction,
+  resetAllDataAction,
   restartOnboardingAction,
 } from "@/app/(app)/settings/actions";
 
@@ -14,17 +14,16 @@ export function SettingsPanel() {
   const [confirmReset, setConfirmReset] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  function resetChats() {
+  function resetAll() {
     setNote(null);
     setError(null);
     startTransition(async () => {
-      const r = await resetChatsAction();
+      const r = await resetAllDataAction();
       if (r.ok) {
         setConfirmReset(false);
+        const c = r.counts;
         setNote(
-          r.removed === 0
-            ? "You had no chats to remove."
-            : `Removed ${r.removed} chat${r.removed === 1 ? "" : "s"}.`,
+          `Account wiped. Removed ${c.conversations} chat${c.conversations === 1 ? "" : "s"}, ${c.memories} memor${c.memories === 1 ? "y" : "ies"}, ${c.sources} source${c.sources === 1 ? "" : "s"}, and your profile.`,
         );
       } else setError(r.error);
     });
@@ -70,24 +69,25 @@ export function SettingsPanel() {
         </button>
       </div>
 
-      {/* Reset data - remove chats */}
+      {/* Reset data - wipe the account clean */}
       <div className={`${card} border-[#5a2b2b] bg-[#2a1414]/40`}>
         <div className="font-display text-base text-[var(--text)]">
-          Reset data - remove chats
+          Reset data - wipe everything
         </div>
         <p className="mt-1 text-sm text-[var(--t-dim)]">
-          Permanently deletes your chat history (every conversation and message). Your
-          profile is not affected. This can&apos;t be undone.
+          Permanently deletes everything in your account: chats, memories, sources, and
+          your profile. Your login stays, but you start over from onboarding. This can&apos;t
+          be undone.
         </p>
         {confirmReset ? (
           <div className="mt-3 flex items-center gap-3">
             <button
               type="button"
-              onClick={resetChats}
+              onClick={resetAll}
               disabled={pending}
               className={`${btn} bg-[#b34747] text-white`}
             >
-              Yes, remove all my chats
+              Yes, wipe everything
             </button>
             <button
               type="button"
@@ -103,7 +103,7 @@ export function SettingsPanel() {
             onClick={() => setConfirmReset(true)}
             className={`${btn} mt-3 border border-[#7a3a3a] text-[#e0a0a0] hover:bg-[#3a1c1c]`}
           >
-            Reset data - remove chats
+            Reset data - wipe everything
           </button>
         )}
       </div>

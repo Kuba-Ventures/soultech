@@ -2,35 +2,41 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentMember } from "@/lib/db/members";
-import { deleteAllChats } from "@/lib/db/conversations";
+import { wipeMemberData, type WipeCounts } from "@/lib/db/reset";
 import { clearOnboardingV1Done } from "@/lib/profile/v1/store";
 import { logAudit } from "@/lib/audit";
 import { isAppError } from "@/lib/errors";
 
-export type ResetChatsResult =
-  | { ok: true; removed: number }
+export type ResetDataResult =
+  | { ok: true; counts: WipeCounts }
   | { ok: false; error: string };
 
 export type RestartOnboardingResult = { ok: true } | { ok: false; error: string };
 
-/** Remove all of the member's chat history (conversations + messages). */
-export async function resetChatsAction(): Promise<ResetChatsResult> {
+/**
+ * Wipe the account clean: chats, memories, sources, learning styles, tracks,
+ * tool connections, the profile, and all settings. The account itself stays,
+ * so the member starts fresh (and re-enters onboarding).
+ */
+export async function resetAllDataAction(): Promise<ResetDataResult> {
   try {
     const member = await getCurrentMember();
-    const removed = await deleteAllChats(member.id);
+    const counts = await wipeMemberData(member.id);
+    // Logged after the wipe so this single "reset" entry is the only audit row.
     await logAudit({
       memberId: member.id,
       actor: "member",
-      action: "chats.reset",
-      details: { conversationsRemoved: removed },
+      action: "account.reset",
+      details: { ...counts },
     });
-    revalidatePath("/chat");
-    revalidatePath("/settings");
-    return { ok: true, removed };
+    for (const path of ["/chat", "/talk", "/profile", "/memory", "/overview", "/settings"]) {
+      revalidatePath(path);
+    }
+    return { ok: true, counts };
   } catch (err) {
     if (isAppError(err)) return { ok: false, error: err.userMessage };
-    console.error("[settings.resetChats]", err);
-    return { ok: false, error: "Couldn't reset your chats. Try again." };
+    console.error("[settings.resetAllData]", err);
+    return { ok: false, error: "Couldn't reset your data. Try again." };
   }
 }
 
