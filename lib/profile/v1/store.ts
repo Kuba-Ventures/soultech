@@ -205,6 +205,43 @@ export async function isOnboardingV1Done(memberId: string): Promise<boolean> {
   return settings[ONBOARDING_KEY] === true;
 }
 
+// Cached profile header (portrait + trait tags). Keyed by the item count it
+// was generated from, so summary.ts can tell when to regenerate.
+const SUMMARY_KEY = "profileV1Summary";
+
+export type ProfileSummaryCache = {
+  portrait: string;
+  traits: string[];
+  atItemCount: number;
+};
+
+export async function getProfileSummaryCache(
+  memberId: string,
+): Promise<ProfileSummaryCache | null> {
+  const settings = await readSettings(memberId);
+  const raw = settings[SUMMARY_KEY] as ProfileSummaryCache | undefined;
+  if (!raw || typeof raw.portrait !== "string" || !Array.isArray(raw.traits)) {
+    return null;
+  }
+  return {
+    portrait: raw.portrait,
+    traits: raw.traits.filter((t): t is string => typeof t === "string"),
+    atItemCount: typeof raw.atItemCount === "number" ? raw.atItemCount : 0,
+  };
+}
+
+export async function saveProfileSummaryCache(
+  memberId: string,
+  data: ProfileSummaryCache,
+): Promise<void> {
+  const db = getDb();
+  const settings = await readSettings(memberId);
+  await db
+    .update(members)
+    .set({ settings: { ...settings, [SUMMARY_KEY]: data } })
+    .where(eq(members.id, memberId));
+}
+
 export async function markOnboardingV1Done(memberId: string): Promise<void> {
   const db = getDb();
   const settings = await readSettings(memberId);
