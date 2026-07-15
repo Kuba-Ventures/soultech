@@ -56,24 +56,33 @@ jobs:
           prompt: |
             You are the reviewer for a supervised PR factory. Review pull request
             #${{ github.event.pull_request.number }} in ${{ github.repository }}.
-
             The factory-tests job has already passed — this job depends on it.
 
-            Use the **pr-reviewer** subagent defined at .claude/agents/pr-reviewer.md and
-            follow its instructions exactly:
-              1. Read the `## Merge policy` block in CLAUDE.md to learn this repo's low-risk
-                 surfaces and its always-escalate surfaces.
-              2. Read the PR diff against the base branch.
-              3. Walk the escalation gates and decide APPROVE-LOWRISK or ESCALATE. When in
-                 doubt, ESCALATE — this is a paying client's product.
+            You do NOT have a Task/subagent tool — do the review yourself, do not
+            try to delegate. Work through these steps with the tools you have:
 
-            Then take exactly these actions:
-              1. Post your review as a PR comment, ending with the exact VERDICT line
-                 (`VERDICT: APPROVE-LOWRISK` or `VERDICT: ESCALATE — <reason>`).
-              2. Apply the verdict LABEL — this is how the merge gate is computed, so it is
-                 REQUIRED:
-                 - If APPROVE-LOWRISK: add label `factory:lowrisk` and remove `factory:escalate`.
-                 - If ESCALATE: add label `factory:escalate` and remove `factory:lowrisk`.
+              1. Read CLAUDE.md and apply its `## Merge policy` block (the low-risk
+                 surfaces and the always-escalate surfaces). Read
+                 .claude/agents/pr-reviewer.md for the review rubric to follow.
+              2. Read the diff: run `gh pr diff ${{ github.event.pull_request.number }}`.
+              3. Decide APPROVE-LOWRISK or ESCALATE. When in doubt, ESCALATE — this
+                 is a paying client's product.
+
+            Then you MUST actually RUN these two commands (not just describe them) —
+            the merge gate reads the label, so applying it is required:
+
+              1. Post the review as a comment, ending with the exact verdict line
+                 (`VERDICT: APPROVE-LOWRISK` or `VERDICT: ESCALATE — <reason>`):
+                   gh pr comment ${{ github.event.pull_request.number }} --body "<your review + verdict line>"
+              2. Apply the verdict label:
+                   APPROVE-LOWRISK:
+                     gh pr edit ${{ github.event.pull_request.number }} --add-label factory:lowrisk
+                     gh pr edit ${{ github.event.pull_request.number }} --remove-label factory:escalate
+                   ESCALATE:
+                     gh pr edit ${{ github.event.pull_request.number }} --add-label factory:escalate
+                     gh pr edit ${{ github.event.pull_request.number }} --remove-label factory:lowrisk
+                 Run add-label and remove-label as separate commands; if a
+                 remove-label fails because the label wasn't set, ignore it.
 
             Do NOT merge the PR under any circumstances.
 
