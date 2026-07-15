@@ -213,3 +213,12 @@ export async function markOnboardingV1Done(memberId: string): Promise<void> {
     .set({ settings: { ...settings, [ONBOARDING_KEY]: true } })
     .where(eq(members.id, memberId));
 }
+
+/** Clear the onboarding-done flag so the first-run wizard shows again. */
+export async function clearOnboardingV1Done(memberId: string): Promise<void> {
+  const db = getDb();
+  const settings = await readSettings(memberId);
+  const next = { ...settings };
+  delete next[ONBOARDING_KEY];
+  await db.update(members).set({ settings: next }).where(eq(members.id, memberId));
+}

@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { getDb } from "./client";
 import {
   conversations,
@@ -10,6 +10,25 @@ import {
 
 export const INTERVIEWER_TITLE = "AI Interviewer";
 export const REFLECTIVE_TITLE = "Reflective Chat";
+
+/**
+ * Delete every conversation (and its messages) for a member. Returns the
+ * number of conversations removed. Messages are removed explicitly rather than
+ * relying on the FK cascade, matching the reset flow elsewhere.
+ */
+export async function deleteAllChats(memberId: string): Promise<number> {
+  const db = getDb();
+  const rows = await db
+    .select({ id: conversations.id })
+    .from(conversations)
+    .where(eq(conversations.memberId, memberId));
+  const ids = rows.map((r) => r.id);
+  if (ids.length === 0) return 0;
+
+  await db.delete(messages).where(inArray(messages.conversationId, ids));
+  await db.delete(conversations).where(eq(conversations.memberId, memberId));
+  return ids.length;
+}
 
 /**
  * Single ongoing conversation per member, by title. Created on first use.
