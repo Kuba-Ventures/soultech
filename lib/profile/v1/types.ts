@@ -175,6 +175,12 @@ export type ProfileItem = {
   content: string;
   /** Provenance, e.g. "[conversation, ~2026-03]", "[memory]", or "user-edited". */
   source: string;
+  /**
+   * Id of the SourceEntry this item came from, if any. Lets a member remove a
+   * source and cascade-delete everything it contributed. Absent on
+   * hand-authored items and on items imported before sources were tracked.
+   */
+  sourceId?: string;
   /** Optional, from any "[frequency <n>]" label in the export. */
   frequency?: number;
 };
@@ -184,4 +190,33 @@ export type Profile = {
   items: ProfileItem[];
   /** ISO 8601 timestamp of the last write. */
   updatedAt: string;
+};
+
+/** How a source was added. */
+export const SOURCE_KINDS = ["ai", "upload", "custom", "connection"] as const;
+export type SourceKind = (typeof SOURCE_KINDS)[number];
+
+export function isSourceKind(v: unknown): v is SourceKind {
+  return typeof v === "string" && (SOURCE_KINDS as readonly string[]).includes(v);
+}
+
+/**
+ * A managed source the member added: an AI paste, an uploaded file, a custom
+ * entry, or a live connection. Stored in members.settings.sourcesV1. Profile
+ * items reference these by id (ProfileItem.sourceId) so removing a source can
+ * cascade-delete what it taught Soultech.
+ */
+export type SourceEntry = {
+  id: string;
+  kind: SourceKind;
+  /** Brand/provider key for the icon + grouping: "claude", "chatgpt", "notion", "file", "custom". */
+  provider: string;
+  /** Human label shown in the UI. */
+  label: string;
+  /** ISO 8601 timestamp added. */
+  addedAt: string;
+  /** For uploads: original filename. */
+  fileName?: string;
+  /** For uploads with blob storage on: the stored file URL (unguessable). */
+  fileUrl?: string;
 };

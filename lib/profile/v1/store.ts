@@ -6,9 +6,11 @@ import { AppError } from "@/lib/errors";
 import type { ParsedItem } from "./parse";
 import {
   isCategoryKey,
+  isSourceKind,
   type CategoryKey,
   type Profile,
   type ProfileItem,
+  type SourceEntry,
 } from "./types";
 
 /**
@@ -61,6 +63,7 @@ function normalizeItems(raw: unknown): ProfileItem[] {
       category: o.category,
       content: o.content,
       source: typeof o.source === "string" && o.source ? o.source : "import",
+      ...(typeof o.sourceId === "string" && o.sourceId ? { sourceId: o.sourceId } : {}),
       ...(typeof o.frequency === "number" && Number.isFinite(o.frequency)
         ? { frequency: Math.trunc(o.frequency) }
         : {}),
@@ -166,12 +169,13 @@ export async function addItem(
   return persistItems(memberId, items);
 }
 
-/** Delete all of the member's profile data. */
+/** Delete all of the member's profile data, including the sources registry. */
 export async function deleteAllProfile(memberId: string): Promise<void> {
   const db = getDb();
   const settings = await readSettings(memberId);
   const next = { ...settings };
   delete next[SETTINGS_KEY];
+  delete next[SOURCES_KEY];
   await db.update(members).set({ settings: next }).where(eq(members.id, memberId));
 }
 
@@ -183,6 +187,7 @@ export async function deleteAllProfile(memberId: string): Promise<void> {
 export async function appendParsedProfile(
   memberId: string,
   parsed: ParsedItem[],
+  sourceId?: string,
 ): Promise<Profile> {
   const existing = await getProfile(memberId);
   const base = existing?.items ?? [];
@@ -191,6 +196,7 @@ export async function appendParsedProfile(
     category: p.category,
     content: p.content,
     source: p.source,
+    ...(sourceId ? { sourceId } : {}),
     ...(p.frequency != null ? { frequency: p.frequency } : {}),
   }));
   return persistItems(memberId, [...base, ...added]);
@@ -284,4 +290,98 @@ export async function recordCalibration(
     .update(members)
     .set({ settings: { ...settings, [CALIBRATION_KEY]: next } })
     .where(eq(members.id, memberId));
+}
+
+// ---------------------------------------------------------------------------
+// Sources registry
+//
+// The list of sources a member has added (AI pastes, uploaded files, custom
+// entries, live connections). Lives alongside the profile in members.settings.
+// Profile items carry a sourceId back to these entries so removing a source
+// cascade-deletes what it contributed.
+// ---------------------------------------------------------------------------
+
+const SOURCES_KEY = "sourcesV1";
+
+function normalizeSources(raw: unknown): SourceEntry[] {
+  if (!Array.isArray(raw)) return [];
+  const out: SourceEntry[] = [];
+  for (const r of raw) {
+    if (!r || typeof r !== "object") continue;
+    const o = r as Record<string, unknown>;
+    if (typeof o.id !== "string" || !o.id) continue;
+    if (!isSourceKind(o.kind)) continue;
+    out.push({
+      id: o.id,
+      kind: o.kind,
+      provider: typeof o.provider === "string" && o.provider ? o.provider : "custom",
+      label: typeof o.label === "string" && o.label ? o.label : "Source",
+      addedAt: typeof o.addedAt === "string" ? o.addedAt : new Date().toISOString(),
+      ...(typeof o.fileName === "string" ? { fileName: o.fileName } : {}),
+      ...(typeof o.fileUrl === "string" ? { fileUrl: o.fileUrl } : {}),
+    });
+  }
+  return out;
+}
+
+export async function listSources(memberId: string): Promise<SourceEntry[]> {
+  const settings = await readSettings(memberId);
+  return normalizeSources(settings[SOURCES_KEY]);
+}
+
+/** Sources plus how many profile items each one contributed. */
+export async function getSourcesWithCounts(
+  memberId: string,
+): Promise<Array<SourceEntry & { itemCount: number }>> {
+  const settings = await readSettings(memberId);
+  const sources = normalizeSources(settings[SOURCES_KEY]);
+  const stored = settings[SETTINGS_KEY] as StoredProfile | undefined;
+  const items = normalizeItems(stored?.items);
+  const counts = new Map<string, number>();
+  for (const it of items) {
+    if (it.sourceId) counts.set(it.sourceId, (counts.get(it.sourceId) ?? 0) + 1);
+  }
+  return sources.map((s) => ({ ...s, itemCount: counts.get(s.id) ?? 0 }));
+}
+
+/** Add or update a source entry (upsert by id). Newest first. */
+export async function recordSource(memberId: string, entry: SourceEntry): Promise<void> {
+  const db = getDb();
+  const settings = await readSettings(memberId);
+  const rest = normalizeSources(settings[SOURCES_KEY]).filter((s) => s.id !== entry.id);
+  await db
+    .update(members)
+    .set({ settings: { ...settings, [SOURCES_KEY]: [entry, ...rest] } })
+    .where(eq(members.id, memberId));
+}
+
+/**
+ * Remove a source and cascade-delete every profile item tagged with it, in a
+ * single settings write. Returns the removed entry (so callers can clean up an
+ * associated blob) and how many items went with it.
+ */
+export async function removeSource(
+  memberId: string,
+  sourceId: string,
+): Promise<{ entry: SourceEntry | null; removedItems: number }> {
+  const db = getDb();
+  const settings = await readSettings(memberId);
+  const sources = normalizeSources(settings[SOURCES_KEY]);
+  const entry = sources.find((s) => s.id === sourceId) ?? null;
+  const nextSources = sources.filter((s) => s.id !== sourceId);
+
+  const stored = settings[SETTINGS_KEY] as StoredProfile | undefined;
+  const items = normalizeItems(stored?.items);
+  const keptItems = items.filter((it) => it.sourceId !== sourceId);
+  const removedItems = items.length - keptItems.length;
+
+  const nextSettings: Record<string, unknown> = { ...settings, [SOURCES_KEY]: nextSources };
+  // Only touch the profile blob if it existed, so we don't materialize an
+  // empty profile for a member who never had one.
+  if (stored) {
+    nextSettings[SETTINGS_KEY] = { items: keptItems, updatedAt: new Date().toISOString() };
+  }
+
+  await db.update(members).set({ settings: nextSettings }).where(eq(members.id, memberId));
+  return { entry, removedItems };
 }
