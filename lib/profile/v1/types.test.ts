@@ -2,8 +2,11 @@ import { describe, it, expect } from "vitest";
 import {
   CATEGORIES,
   CATEGORY_KEYS,
+  SECTIONS,
   categoryLabel,
   isCategoryKey,
+  primaryCategoryForSection,
+  sectionForCategory,
 } from "./types";
 
 // Pure-logic tests for the canonical schema surface. These guard the ten-
@@ -46,5 +49,27 @@ describe("categoryLabel", () => {
   it("returns the human label for a known key", () => {
     expect(categoryLabel("communication_register")).toBe("Communication register");
     expect(categoryLabel("emotional_cues")).toBe("Emotional & tonal cues");
+  });
+});
+
+describe("section mapping", () => {
+  it("covers every category exactly once across sections", () => {
+    const mapped = SECTIONS.flatMap((s) => s.categories);
+    expect(mapped).toHaveLength(CATEGORY_KEYS.length);
+    expect(new Set(mapped)).toEqual(new Set(CATEGORY_KEYS));
+  });
+
+  it("maps every category to a section whose category list contains it", () => {
+    for (const c of CATEGORY_KEYS) {
+      const key = sectionForCategory(c);
+      const section = SECTIONS.find((s) => s.key === key)!;
+      expect(section.categories).toContain(c);
+    }
+  });
+
+  it("primaryCategoryForSection returns one of that section's categories", () => {
+    for (const s of SECTIONS) {
+      expect(s.categories).toContain(primaryCategoryForSection(s.key));
+    }
   });
 });

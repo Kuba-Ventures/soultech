@@ -2,8 +2,12 @@
 
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
-import { CATEGORIES } from "@/lib/profile/v1/types";
-import type { CategoryKey, Profile, ProfileItem } from "@/lib/profile/v1/types";
+import {
+  SECTIONS,
+  primaryCategoryForSection,
+  sectionForCategory,
+} from "@/lib/profile/v1/types";
+import type { Profile, ProfileItem, SectionKey } from "@/lib/profile/v1/types";
 import {
   addProfileItem,
   deleteAllProfileData,
@@ -11,9 +15,9 @@ import {
   updateProfileItem,
 } from "@/app/(app)/profile/actions";
 
-// NOTE: the periodic "mirror moment" review (surface a few items and ask
-// "still true?") would hook in here — it reads the same store and reuses
-// updateProfileItem / deleteProfileItem below. Not built yet (deferred).
+// NOTE: the periodic "mirror moment" review (surface a few statements and ask
+// "still true?") would hook in here — same store, reuses updateProfileItem /
+// deleteProfileItem below. Not built yet (deferred).
 
 type Props = { initialProfile: Profile | null };
 
@@ -21,18 +25,20 @@ export function ProfileHub({ initialProfile }: Props) {
   const [profile, setProfile] = useState<Profile | null>(initialProfile);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
-  const [addingCategory, setAddingCategory] = useState<CategoryKey | null>(null);
+  const [addingSection, setAddingSection] = useState<SectionKey | null>(null);
   const [addDraft, setAddDraft] = useState("");
   const [confirmWipe, setConfirmWipe] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const byCategory = useMemo(() => {
-    const map = new Map<CategoryKey, ProfileItem[]>();
+  // Group items into the reader-facing sections.
+  const bySection = useMemo(() => {
+    const map = new Map<SectionKey, ProfileItem[]>();
     for (const item of profile?.items ?? []) {
-      const list = map.get(item.category) ?? [];
+      const key = sectionForCategory(item.category);
+      const list = map.get(key) ?? [];
       list.push(item);
-      map.set(item.category, list);
+      map.set(key, list);
     }
     return map;
   }, [profile]);
@@ -61,13 +67,16 @@ export function ProfileHub({ initialProfile }: Props) {
     });
   }
 
-  function addTo(category: CategoryKey) {
+  function addTo(section: SectionKey) {
     const content = addDraft;
     run(async () => {
-      const r = await addProfileItem({ category, content });
+      const r = await addProfileItem({
+        category: primaryCategoryForSection(section),
+        content,
+      });
       if (r.ok) {
         setProfile(r.profile);
-        setAddingCategory(null);
+        setAddingSection(null);
         setAddDraft("");
       } else setError(r.error);
     });
@@ -88,12 +97,10 @@ export function ProfileHub({ initialProfile }: Props) {
   if (total === 0) {
     return (
       <div className="rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-8 text-center">
-        <div className="font-display text-xl text-[var(--text)]">
-          Nothing here yet
-        </div>
+        <div className="font-display text-xl text-[var(--text)]">Nothing here yet</div>
         <p className="mx-auto mt-2 max-w-md text-sm text-[var(--t-dim)]">
-          Import a self-portrait and Soultech reads it into the ten-category model of who
-          you are.
+          Import a self-portrait and Soultech turns it into a picture of how you
+          communicate, think, and learn.
         </p>
         <Link
           href="/import"
@@ -109,8 +116,8 @@ export function ProfileHub({ initialProfile }: Props) {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="font-mono text-xs text-[var(--t-faint)]">
-          {total} item{total === 1 ? "" : "s"}
-          {profile && ` · updated ${new Date(profile.updatedAt).toLocaleString()}`}
+          {total} thing{total === 1 ? "" : "s"} learned
+          {profile && ` · updated ${new Date(profile.updatedAt).toLocaleDateString()}`}
         </div>
         <div className="flex items-center gap-3">
           {error && <span className="text-sm text-[#e08a8a]">{error}</span>}
@@ -118,27 +125,28 @@ export function ProfileHub({ initialProfile }: Props) {
             href="/import"
             className="rounded-lg border border-[var(--line-2)] bg-[var(--surface-2)] px-3 py-1.5 text-xs text-[var(--text)] transition hover:bg-white/10"
           >
-            Re-import
+            Add more
           </Link>
         </div>
       </div>
 
-      {CATEGORIES.map((cat) => {
-        const items = byCategory.get(cat.key) ?? [];
+      {SECTIONS.map((section) => {
+        const items = bySection.get(section.key) ?? [];
+        if (items.length === 0 && addingSection !== section.key) return null;
         return (
           <section
-            key={cat.key}
+            key={section.key}
             className="rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-5"
           >
             <div className="flex items-baseline justify-between gap-4">
               <div>
-                <h2 className="font-display text-lg text-[var(--text)]">{cat.label}</h2>
-                <p className="mt-0.5 text-xs text-[var(--t-faint)]">{cat.blurb}</p>
+                <h2 className="font-display text-lg text-[var(--text)]">{section.label}</h2>
+                <p className="mt-0.5 text-xs text-[var(--t-faint)]">{section.blurb}</p>
               </div>
               <button
                 type="button"
                 onClick={() => {
-                  setAddingCategory(cat.key);
+                  setAddingSection(section.key);
                   setAddDraft("");
                 }}
                 className="shrink-0 rounded-md border border-[var(--line-2)] px-2.5 py-1 text-xs text-[var(--t-dim)] transition hover:text-[var(--text)]"
@@ -147,22 +155,15 @@ export function ProfileHub({ initialProfile }: Props) {
               </button>
             </div>
 
-            <div className="mt-4 flex flex-col gap-3">
-              {items.length === 0 && addingCategory !== cat.key && (
-                <div className="text-sm text-[var(--t-faint)]">Nothing here yet.</div>
-              )}
-
+            <div className="mt-4 flex flex-col gap-2.5">
               {items.map((item) => (
-                <div
-                  key={item.id}
-                  className="rounded-lg border border-[var(--line)] bg-black/15 p-3"
-                >
+                <div key={item.id} className="group">
                   {editingId === item.id ? (
-                    <div>
+                    <div className="rounded-lg border border-[var(--line)] bg-black/20 p-3">
                       <textarea
                         value={draft}
                         onChange={(e) => setDraft(e.target.value)}
-                        rows={3}
+                        rows={2}
                         className="w-full resize-y rounded-md border border-[var(--line)] bg-black/30 p-2 text-sm text-[var(--text)] focus:outline-none"
                       />
                       <div className="mt-2 flex gap-2">
@@ -184,63 +185,58 @@ export function ProfileHub({ initialProfile }: Props) {
                       </div>
                     </div>
                   ) : (
-                    <div>
-                      <p className="text-sm leading-relaxed text-[var(--text)]">
+                    <div className="flex items-start gap-3 rounded-lg px-3 py-2 transition hover:bg-white/[0.03]">
+                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--amber)]/70" />
+                      <p className="flex-1 text-sm leading-relaxed text-[var(--text)]">
                         {item.content}
                       </p>
-                      <div className="mt-2 flex items-center justify-between gap-3">
-                        <span className="font-mono text-[11px] text-[var(--t-faint)]">
-                          {item.source}
-                          {item.frequency != null && ` · frequency ${item.frequency}`}
-                        </span>
-                        <span className="flex gap-3">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditingId(item.id);
-                              setDraft(item.content);
-                            }}
-                            className="text-xs text-[var(--t-dim)] transition hover:text-[var(--cool)]"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            disabled={pending}
-                            onClick={() => remove(item.id)}
-                            className="text-xs text-[var(--t-dim)] transition hover:text-[#e08a8a] disabled:opacity-40"
-                          >
-                            Delete
-                          </button>
-                        </span>
-                      </div>
+                      <span className="mt-0.5 flex shrink-0 gap-2 text-[11px] text-[var(--t-faint)] opacity-0 transition group-hover:opacity-100">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingId(item.id);
+                            setDraft(item.content);
+                          }}
+                          className="hover:text-[var(--cool)]"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          disabled={pending}
+                          onClick={() => remove(item.id)}
+                          className="hover:text-[#e08a8a] disabled:opacity-40"
+                        >
+                          Delete
+                        </button>
+                      </span>
                     </div>
                   )}
                 </div>
               ))}
 
-              {addingCategory === cat.key && (
+              {addingSection === section.key && (
                 <div className="rounded-lg border border-dashed border-[var(--line-2)] bg-black/10 p-3">
                   <textarea
                     value={addDraft}
                     onChange={(e) => setAddDraft(e.target.value)}
-                    rows={3}
+                    rows={2}
                     autoFocus
-                    placeholder="Add an observation in your own words…"
+                    placeholder="Add something in your own words, e.g. &ldquo;You learn best from a worked example first.&rdquo;"
                     className="w-full resize-y rounded-md border border-[var(--line)] bg-black/30 p-2 text-sm text-[var(--text)] placeholder:text-[var(--t-faint)] focus:outline-none"
                   />
                   <div className="mt-2 flex gap-2">
                     <button
                       type="button"
                       disabled={pending || addDraft.trim().length === 0}
-                      onClick={() => addTo(cat.key)}
+                      onClick={() => addTo(section.key)}
                       className="rounded-md bg-[var(--amber)] px-3 py-1 text-xs font-semibold text-black disabled:opacity-40"
                     >
                       Add
                     </button>
                     <button
                       type="button"
-                      onClick={() => setAddingCategory(null)}
+                      onClick={() => setAddingSection(null)}
                       className="rounded-md border border-[var(--line-2)] px-3 py-1 text-xs text-[var(--t-dim)]"
                     >
                       Cancel

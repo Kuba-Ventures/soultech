@@ -96,6 +96,78 @@ export function categoryLabel(key: CategoryKey): string {
   return CATEGORIES.find((c) => c.key === key)?.label ?? key;
 }
 
+/**
+ * Reader-facing sections. The ten categories are the machine model; these
+ * group them into a handful of friendly, second-person sections the profile
+ * view renders ("How you learn", "How you communicate", …). Every category
+ * belongs to exactly one section, so the mapping is total.
+ */
+export type SectionKey =
+  | "how_you_learn"
+  | "how_you_communicate"
+  | "how_you_think"
+  | "what_you_value"
+  | "what_youre_into"
+  | "quirks";
+
+export const SECTIONS: {
+  key: SectionKey;
+  label: string;
+  blurb: string;
+  categories: CategoryKey[];
+}[] = [
+  {
+    key: "how_you_learn",
+    label: "How you learn",
+    blurb: "How you like ideas delivered, and how you like to be engaged.",
+    categories: ["information_delivery", "engagement_style"],
+  },
+  {
+    key: "how_you_communicate",
+    label: "How you communicate",
+    blurb: "Your voice, register, and the phrasing you reach for.",
+    categories: ["communication_register", "characteristic_phrasing"],
+  },
+  {
+    key: "how_you_think",
+    label: "How you think",
+    blurb: "How you ask questions and reason through problems.",
+    categories: ["how_they_ask", "reasoning_patterns"],
+  },
+  {
+    key: "what_you_value",
+    label: "What you value",
+    blurb: "What you optimize for and how you decide.",
+    categories: ["values_and_criteria"],
+  },
+  {
+    key: "what_youre_into",
+    label: "What you're into",
+    blurb: "The domains you keep coming back to.",
+    categories: ["recurring_topics"],
+  },
+  {
+    key: "quirks",
+    label: "Quirks & tells",
+    blurb: "Patterns, contradictions, and how you signal what you're feeling.",
+    categories: ["patterns_and_contradictions", "emotional_cues"],
+  },
+];
+
+const CATEGORY_TO_SECTION = new Map<CategoryKey, SectionKey>(
+  SECTIONS.flatMap((s) => s.categories.map((c) => [c, s.key] as const)),
+);
+
+/** The friendly section a category belongs to (defaults to quirks). */
+export function sectionForCategory(category: CategoryKey): SectionKey {
+  return CATEGORY_TO_SECTION.get(category) ?? "quirks";
+}
+
+/** The primary category to file a manually-added item under, per section. */
+export function primaryCategoryForSection(section: SectionKey): CategoryKey {
+  return SECTIONS.find((s) => s.key === section)?.categories[0] ?? "patterns_and_contradictions";
+}
+
 export type ProfileItem = {
   id: string;
   category: CategoryKey;
