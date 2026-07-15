@@ -5,6 +5,8 @@ import { getProfile, isOnboardingV1Done } from "@/lib/profile/v1/store";
 import { OnboardingWizard } from "@/components/app/OnboardingWizard";
 
 export const dynamic = "force-dynamic";
+// Give after() background imports room to finish the model parse post-response.
+export const maxDuration = 120;
 
 /**
  * First-run onboarding. Post-sign-in lands here; once the member has finished
