@@ -1,13 +1,13 @@
 # Soultech
 *A personalized learning AI built on a structured ten-category model of who you are.*
 
-*Last updated: 2026-07-14 by kuba-vault*
+*Last updated: 2026-07-15 by kuba-vault*
 
 ---
 
 ## TL;DR
 
-Soultech was repositioned back to its original v1 vision and shipped to production today. It is no longer the v4 "second self + two-way MCP connector" product; it's a personalized learning AI built on a structured ten-category model of how you communicate, think, and learn. You seed that model by pasting a self-portrait your existing ChatGPT/Claude writes (or uploading docs); Soultech parses it into the ten categories, and every chat turn is calibrated to it. Live at soultech-umber.vercel.app, owner-directed, shipped across PRs #24-#31. The main remaining work is tearing down the orphaned v4 surfaces so the app reads as one clean v1 product.
+Soultech is a personalized learning AI built on a structured ten-category model of how you communicate, think, and learn. You seed that model from sources: paste a self-portrait your existing ChatGPT/Claude writes, upload a doc, connect Notion, or add your own text. Soultech parses each source into the ten categories, and every chat turn is calibrated to it. The v4 teardown is done, so the app now reads as one clean v1 product, and the old "Import" page grew into a full Sources manager where every source is listed and removable, with removal cascading to everything that source taught. Live at soultech-umber.vercel.app, owner-directed, shipped through PR #43. Notion is the first live connection; Google Drive, Gmail, and Spotify are shown as "Soon" stubs.
 
 ---
 
@@ -15,54 +15,54 @@ Soultech was repositioned back to its original v1 vision and shipped to producti
 
 **The problem:** General AI assistants don't know you. They don't adapt to your voice, how you reason, or how you like to be taught, and there's no low-effort way to hand them that context.
 
-**The solution:** Import a structured model of yourself by pasting a self-portrait your existing ChatGPT/Claude already writes (or uploading your own docs). Soultech reads it into ten fixed categories of how you communicate, think, and learn, then calibrates every chat to it.
+**The solution:** Build a structured model of yourself from sources — paste a self-portrait your existing ChatGPT/Claude already writes, upload docs, connect Notion, or add your own text. Soultech reads each source into ten fixed categories of how you communicate, think, and learn, then calibrates every chat to it.
 
-**The user:** People who want an AI that teaches and reasons in a way tuned to them, without wiring up integrations or filling out long forms.
+**The user:** People who want an AI that teaches and reasons in a way tuned to them, without filling out long forms.
 
-**The value:** Paste once, get an assistant that talks in your register, delivers information the way you take it in, and pushes or affirms you the way you actually want. You own and edit the whole profile.
+**The value:** Feed it a few sources, get an assistant that talks in your register, delivers information the way you take it in, and pushes or affirms you the way you actually want. You own every source and can remove any one of them, which deletes everything it contributed.
 
 ---
 
 ## Status
 
-- **Phase:** live (v1 repositioning shipped to production)
+- **Phase:** live (v1, post-teardown; source manager + first live connection shipped)
 - **Engagement manager:** self-directed
 - **Lead:** Finley (finley@qsbsrollover.com)
 - **Cadence:** continuous solo build; branch → PR → human bypass-merge
-- **Next milestone:** v4 teardown — remove/unlink the orphaned v4 surfaces so the app is one clean v1 product
+- **Next milestone:** access-controlled file storage (signed URLs for Blob), then promote the v1 profile out of `members.settings` into a dedicated table
 - **Flags:** shipping
 
 ---
 
 ## Where we are right now
 
-The v1 repositioning is live on production. Across PRs #24-#31 (branch → PR → human bypass-merge) the product went from the v4 "second self / MCP connector / typed memory store" back to the original vision: paste in a self-portrait, get a structured ten-category profile, chat with an AI calibrated to it. The core loop works end to end — `/import` (or the `/welcome` wizard) parses your export into the ten categories, `/profile` lets you edit it, and `/talk` compiles it into the system prompt on every turn. The immediate next job is the **v4 teardown**: `/learn`, `/overview`, `/memory`, `/plugin`, `/sources`, and the old `/chat` still exist and are orphaned or only semi-linked (the sidebar still points at several of them), so the app doesn't yet read as a single product. Also deferred: the "mirror moment" profile review, the full calibration feedback loop, and moving the profile out of `members.settings` into a dedicated table. Two things for the human: production Clerk is still a dev instance, and the factory review gate is failing closed so every PR needs a manual bypass-merge.
+The v4 teardown landed (PR #34), so the app is v1-only — no more orphaned `/learn`, `/overview`, `/memory`, `/plugin`, `/sources`, old `/chat`, or the per-user MCP server. Since then the focus was sources. The old "Import" page (route still `/import`, sidebar label now "Sources") became a full source manager (`components/app/SourcesManager.tsx`, PR #43): "Add a source" grouped by provider (Import from Claude / ChatGPT, Upload a file, Connect Notion, plus Google Drive / Gmail / Spotify as "Soon" stubs, plus Add custom), and "Your sources" — a managed list of everything added, with per-source Remove that **cascades**, deleting the source, every profile item it contributed, its stored file, and (for Notion) its token. Notion is the first live connection (PR #42): the member pastes their own integration token, it's encrypted at rest with AES-256-GCM and never sent back to the client, and a read-only bounded pull of shared pages runs in the background through the same sensitivity filter as every other import. Raw uploaded files can now optionally be retained on Vercel Blob (PR #43), gated behind an env var. Deferred as before: the "mirror moment" profile review, closing the calibration loop, and moving the profile out of `members.settings` into a table. Three things for the human: production Clerk is still a dev instance, the factory review gate still fails closed (every PR needs a manual bypass-merge), and Blob file URLs are public-but-unguessable with no per-request auth — signed-URL storage is the flagged hardening follow-up.
 
 ---
 
 ## What's built
 
 **Frontend / UI (v1 — the live product)**
-- `/import` — paste-in onboarding. Parses an export into the ten-category schema and saves it (`app/(app)/import/`).
-- `/profile` — the "who you are" hub. Items grouped by the ten categories, each with a source label; edit / add / delete individual items, plus delete-all (`components/app/ProfileHub.tsx`, `app/(app)/profile/`).
-- `/welcome` — first-run onboarding wizard (Welcome → Paste → Upload docs → Connect → Done). Skippable, gated by an `onboardingV1Done` flag so it only shows once. **Connectors are visual stubs ("Soon")** — real OAuth was never built (`components/app/OnboardingWizard.tsx`, `app/welcome/`).
+- `/import` (sidebar label "Sources") — full source manager. "Add a source" grouped by provider: Import from Claude / ChatGPT (paste an AI export, one per assistant), Upload a file (.txt/.md/.pdf), Connect Notion (live), Add custom (name + pasted text), plus Google Drive / Gmail / Spotify shown as "Soon" stubs. "Your sources" lists every source added — provider icon, kind, date, and how many profile items it contributed — each with a Remove button that cascades (`components/app/SourcesManager.tsx`, `app/(app)/import/`).
+- `/profile` — the "who you are" hub: a portrait header plus prose sections over the ten categories; edit / add / delete individual items, plus delete-all (`components/app/ProfileHub.tsx`, `lib/profile/v1/summary.ts`, `app/(app)/profile/`).
+- `/welcome` — first-run onboarding wizard (Welcome → Paste → Sources → Done); upload + doc-source connectors merged onto one "Sources" step, imports read in the background so the wizard doesn't block. Skippable, gated by an `onboardingV1Done` flag (`components/app/OnboardingWizard.tsx`, `app/welcome/`).
 - `/talk` — personalized chat. Shows an "in your style: <tag>" eyebrow and a "Closer / Not quite" calibration tap (`components/app/TalkChat.tsx`, `app/(app)/talk/`).
-- Landing refreshed to the v1 story: hero + "how it works" strip, rewritten `/how-it-works` and `/use-cases`. Header CTA is "Log in"; the waitlist gate is kept (`app/page.tsx`, `components/SiteChrome.tsx`).
+- Landing on the v1 story: hero + "how it works" strip, `/how-it-works` and `/use-cases`. Header CTA is "Log in"; the waitlist gate is kept (`app/page.tsx`, `components/SiteChrome.tsx`).
 - Settings: full account wipe (chats + memories + profile + everything) and restart-onboarding (`components/app/SettingsPanel.tsx`, `lib/db/reset.ts`).
 
 **Backend / data (v1)**
+- `app/(app)/import/actions.ts` — server actions for every source path: `importProviderPaste`, `addCustomSource`, `uploadFileSource`, `removeSourceAction`, and the Notion actions (`connectNotionAction` / `pullNotionAction` / `disconnectNotionAction`). All ingestion runs through one `ingestAsSource` helper so every source hits the same sensitivity filter and gets tagged with a `sourceId`.
+- `lib/connections/` — bring-your-own Notion integration. `crypto.ts` encrypts the token at rest with AES-256-GCM (key derived from env `CONNECTIONS_ENC_KEY`); `store.ts` persists only ciphertext in `members.settings`, decrypts server-side, never returns the token to the client; `notion.ts` does a read-only bounded pull of shared pages. The pull runs in the background via `after()`.
+- `lib/uploads/userFiles.ts` — optional at-rest storage of raw uploaded files on Vercel Blob, gated behind env `BLOB_READ_WRITE_TOKEN`. Without it, uploads still work (extracted items kept) but bytes aren't retained. Blob URLs are public-but-unguessable (no per-request auth) — hardening flagged.
 - `lib/profile/v1/parse.ts` — text → ten-category items via an isolated `claude-opus-4-8` structured-outputs call (JSON-schema-constrained, thinking disabled). A sensitivity pass tags each item; `partitionBySensitivity` drops health/financial/location/identity items before anything is saved, and unclassified items fail closed to "identity" (dropped).
-- `lib/profile/v1/types.ts` — the ten fixed category keys; single source of truth for the schema.
+- `lib/profile/v1/store.ts` — all v1 persistence. The profile (`profileV1`), the source registry (`sourcesV1`: list / per-source counts / upsert / cascade-remove), onboarding flag (`onboardingV1Done`), summary cache, and calibration signals (`chatCalibrationV1`) all live in `members.settings` JSON. `ProfileItem` now carries an optional `sourceId`; `removeSource` cascade-deletes every item with that id. **No dedicated profile or sources table yet** — a deliberate later swap.
+- `lib/profile/v1/types.ts` — the ten fixed category keys plus the `SourceEntry` / `SourceKind` types; single source of truth for the schema.
 - `lib/compileProfile.ts` — isolated pure function that compiles a profile into the chat system prompt every turn, plus `styleTag()` for the "in your style" eyebrow. No I/O, unit-tested.
 - `app/api/v1/chat/route.ts` — stateless personalized chat; loads the profile, compiles it, streams `claude-opus-4-8` as NDJSON, audits each turn.
-- `lib/profile/v1/store.ts` — all v1 persistence. The profile (`profileV1`), the onboarding flag (`onboardingV1Done`), and calibration signals (`chatCalibrationV1`) all live in `members.settings` JSON. **No dedicated profile table yet** — a deliberate later swap.
-
-**Orphaned v4 surfaces (still in the codebase, teardown pending)**
-- Routes `/learn`, `/overview`, `/memory`, `/plugin`, `/sources`, and the old `/chat` still exist and are orphaned or only semi-linked (the sidebar still lists Learn/Plug in/Overview/Memory/Sources).
-- The v4 tables (`memories`, `sources`, `conversations`, `learning_styles`, `tracks`, `tool_connections`) and the per-user MCP server at `app/api/mcp/[token]/` still exist. None are part of the v1 loop.
 
 **Infrastructure**
-- Vercel auto-deploys `main` (project `soultech`). Drizzle migrations on Neon Postgres.
+- Vercel auto-deploys `main` (project `soultech`). Drizzle migrations on Neon Postgres. Optional Vercel Blob store for raw uploaded files.
+- v4 teardown complete (PR #34): the orphaned routes, components, the per-user MCP server (`app/api/mcp/[token]/`), and their nav entries are removed.
 
 ---
 
@@ -72,10 +72,13 @@ The v1 repositioning is live on production. Across PRs #24-#31 (branch → PR �
 |---|---|---|
 | Framework | Next 16 App Router + React 18 + TypeScript | `app/(app)/` route group |
 | Auth | Clerk (`@clerk/nextjs` 7) | **production is a DEV instance** — see Risks; MCP route Clerk-exempt in `middleware.ts` |
-| ORM / DB | Drizzle ORM on Neon serverless Postgres | `lib/db/`; v1 profile lives in `members.settings` JSON, not a dedicated table |
+| ORM / DB | Drizzle ORM on Neon serverless Postgres | `lib/db/`; v1 profile + source registry live in `members.settings` JSON, not a dedicated table |
 | LLM | Anthropic `claude-opus-4-8` | extraction (`lib/profile/v1/parse.ts`) + chat (`app/api/v1/chat/route.ts`) |
 | Doc parsing | `pdf-parse` | `lib/profile/v1/extractText.ts` |
-| Transcription | Deepgram | v4-era; not part of the v1 loop |
+| File storage | Vercel Blob (`@vercel/blob`) | optional; raw uploaded files, gated by `BLOB_READ_WRITE_TOKEN` (`lib/uploads/userFiles.ts`) |
+| Connections | Notion integration token, AES-256-GCM at rest | `lib/connections/`; gated by `CONNECTIONS_ENC_KEY` |
+| Transcription | Deepgram | v4-era dependency; not part of the v1 loop |
+| Icons | `simple-icons`, `lucide-react` | provider brand icons in the source manager |
 | Styling | Tailwind 3 + `.app`-scoped CSS design system | `app/globals.css`, `design/soultech.html` |
 | Hosting | Vercel | auto-deploy on `main` |
 | Tests | Vitest | `vitest.config.ts`; includes `lib/compileProfile.test.ts`, `lib/profile/v1/*.test.ts` |
@@ -87,13 +90,14 @@ The v1 repositioning is live on production. Across PRs #24-#31 (branch → PR �
 | Integration | Purpose | Cost | Status |
 |---|---|---|---|
 | Clerk | Authentication for the app surface | unknown | live (DEV instance — must swap to prod keys before launch) |
-| Neon Postgres | Primary datastore (v1 profile in `members.settings` JSON) | unknown | live |
+| Neon Postgres | Primary datastore (v1 profile + source registry in `members.settings` JSON) | unknown | live |
 | Anthropic | `claude-opus-4-8` for profile extraction + personalized chat | usage-based | live |
-| Deepgram | Audio transcription (v4-era) | usage-based | present, not in v1 loop |
-| Soultech MCP server (per-user) | v4 two-way connector | self-hosted | orphaned (teardown pending) |
-| Onboarding connectors (Calendar/Gmail/Spotify, etc.) | Future profile sources | unknown | visual stubs only ("Soon") — no OAuth built |
+| Notion | Bring-your-own integration token; read-only bounded pull of shared pages into the profile | free (member's own token) | live |
+| Vercel Blob | Optional at-rest storage of raw uploaded files; gated by `BLOB_READ_WRITE_TOKEN` | usage-based | live (opt-in per env) |
+| Deepgram | Audio transcription (v4-era dependency) | usage-based | present, not in v1 loop |
+| Google Drive / Gmail / Spotify | Future profile sources | unknown | "Soon" stubs — no OAuth built |
 
-*Source: no MCP config files found in repo. Built from `package.json` dependencies, `middleware.ts`, and the v1 code (`app/api/v1/chat/route.ts`, `lib/profile/v1/`, `lib/compileProfile.ts`).*
+*Source: no MCP config files found in repo. Built from `package.json` dependencies, `middleware.ts`, and the v1 code (`app/(app)/import/actions.ts`, `lib/connections/`, `lib/uploads/userFiles.ts`, `lib/profile/v1/`, `lib/compileProfile.ts`).*
 
 ---
 
@@ -101,6 +105,11 @@ The v1 repositioning is live on production. Across PRs #24-#31 (branch → PR �
 
 The "why" behind key choices. Newest first.
 
+- **2026-07-15 — Every source is a first-class, removable object, and removal cascades.** Sources are tracked in a `sourcesV1` registry and each profile item carries the `sourceId` it came from, so removing a source deletes the source, every item it contributed, its stored file, and (for Notion) its token. Gives the member a clean "take it back" — no orphaned data from a source they revoked. Rejected: untracked one-way imports (no way to undo a single source).
+- **2026-07-15 — Notion is bring-your-own integration token, encrypted at rest, read-only.** The member pastes their own Notion integration token; it's encrypted with AES-256-GCM (`CONNECTIONS_ENC_KEY`), stored as ciphertext, decrypted only server-side, never returned to the client. Pull is read-only and bounded, and runs through the same sensitivity filter as every import. Rejected for now: full OAuth (more build, more surface) — bring-your-own token ships the first live connection fast while keeping the secret off the client.
+- **2026-07-15 — Notion pull runs in the background via `after()`.** Connecting registers the source immediately and returns; items fill in as the background pull completes. Keeps the connect action snappy and avoids blocking on a slow external fetch.
+- **2026-07-15 — Raw file retention is opt-in behind an env var, and uploads work without it.** Vercel Blob storage is gated by `BLOB_READ_WRITE_TOKEN`; without the token, uploads still extract profile items but don't retain bytes. Lets the product ship without hard-wiring a storage bill or a storage dependency. Known caveat: Blob URLs are public-but-unguessable (no per-request auth) — signed-URL storage is the flagged hardening follow-up.
+- **2026-07-15 — v4 teardown completed (not deferred).** The orphaned v4 routes, components, the per-user MCP server, and their nav entries were removed (PR #34) rather than left semi-linked, so the app reads as one v1 product. Reverses the 2026-07-14 "teardown pending" state.
 - **2026-07-14 — Repositioned from the v4 "second self / MCP connector" back to the v1 vision.** The v4 outward "second self + two-way MCP connector + typed memory store" was set aside in favor of the original v1 idea: a personalized learning AI built on a structured ten-category model of the user, seeded by pasting a self-portrait their existing ChatGPT/Claude writes. Rejected: continuing to build out v4 (MCP OAuth, tracks, typed memory). Reverses the 2026-06-03 "second self" reposition.
 - **2026-07-14 — The profile is always structured JSON in ten fixed categories, never free text.** A single source-of-truth schema (`lib/profile/v1/types.ts`) that every feature reads — the hub, per-item editing, the compile-to-prompt step, the future "mirror moment." Extraction is a JSON-schema-constrained `claude-opus-4-8` call so the model can only return schema-valid items.
 - **2026-07-14 — Drop sensitive items before they're ever persisted.** Each parsed item is tagged (health/financial/location/identity/none); only "none" is saved. Anything the model doesn't clearly classify fails closed to "identity" and is dropped. Keeps private content out of storage and out of the system prompt.
@@ -121,26 +130,26 @@ The "why" behind key choices. Newest first.
 
 ## Open loops
 
-- [ ] **v4 teardown** — remove/unlink `/learn`, `/overview`, `/memory`, `/plugin`, `/sources`, old `/chat`, the MCP server, and the orphaned v4 tables so the app reads as one clean v1 product — Finley
+- [ ] Move raw file storage to access-controlled (signed-URL) Blob — today's URLs are public-but-unguessable with no per-request auth — Finley
 - [ ] Swap production Clerk from the DEV instance to production keys before any public launch — Finley
 - [ ] Fix the factory review gate so it can apply `factory:lowrisk` / `factory:escalate` labels (currently fails closed → every PR needs a manual bypass-merge) — Finley
 - [ ] Build the "mirror moment" profile review after import — Finley
 - [ ] Close the calibration feedback loop (fold "Closer / Not quite" signals back into the profile) — Finley
-- [ ] Promote the v1 profile from `members.settings` JSON to a dedicated DB table — Finley
-- [ ] Update the sidebar to drop the orphaned v4 nav items — Finley
+- [ ] Promote the v1 profile + `sourcesV1` registry from `members.settings` JSON to dedicated DB tables — Finley
+- [ ] Build real connections for the "Soon" stubs (Google Drive / Gmail / Spotify) — Finley
 - [ ] Refresh `README.md` (still describes an older product) — Finley
 
 ---
 
 ## Risks & known issues
 
+- **Vercel Blob file URLs are public-but-unguessable.** Stored raw files are served from public URLs with no per-request auth; the memberId path plus a random suffix is the only protection. Signed-URL / access-controlled storage is the flagged hardening follow-up.
 - **Production Clerk is a DEV instance (dev keys).** Must switch to production keys before a real public launch.
 - **Factory review gate fails closed.** It appears to be missing the `factory:lowrisk` / `factory:escalate` labels, so no PR is marked mergeable and every one needs a human bypass-merge. Per `CLAUDE.md`, anything touching auth/DB/AI must escalate regardless.
-- v4 surfaces (`/learn`, `/overview`, `/memory`, `/plugin`, `/sources`, old `/chat`) and the MCP server are still present and semi-linked — the app doesn't yet read as a single v1 product until the teardown lands.
-- The v1 profile, onboarding flag, and calibration signals share one `members.settings` JSON blob with no dedicated table — fine for now, but a migration is pending.
-- Onboarding connectors are visual stubs; users may expect Calendar/Gmail/Spotify to actually connect.
+- The v1 profile, source registry, onboarding flag, and calibration signals share one `members.settings` JSON blob with no dedicated table — fine for now, but a migration is pending.
+- Google Drive / Gmail / Spotify show as "Soon" stubs; users may expect them to actually connect.
 - The calibration signal is captured but does nothing yet (loop deferred).
-- No signed-in end-to-end QA pass on production has been recorded for the v1 loop.
+- No signed-in end-to-end QA pass on production has been recorded for the source manager + Notion connection path.
 
 ---
 
@@ -158,6 +167,13 @@ The "why" behind key choices. Newest first.
 
 What changed and when, newest first.
 
+- **2026-07-15:** Rewrote PROJECT.md for the source-manager era — Sources page, Notion connection, optional Vercel Blob file storage, `sourcesV1` registry + cascade removal, `CONNECTIONS_ENC_KEY` / `BLOB_READ_WRITE_TOKEN` env vars, and the v4-teardown-complete state. Flagged public-but-unguessable Blob URLs as the hardening follow-up.
+- **2026-07-15:** Sources manager — provider-sorted "Add a source" + managed source list with cascade removal (#43); adds optional raw-file storage on Vercel Blob.
+- **2026-07-15:** Notion connection — paste a bring-your-own integration token (encrypted at rest), background pull of shared pages into the profile (#42).
+- **2026-07-15:** Sources page — LLM import as one section + a Connections section; sidebar label "Import" → "Sources" (#39).
+- **2026-07-15:** Profile — portrait header + prose sections (#38); narrative synthesis for faster, cleaner imports (#35).
+- **2026-07-15:** Onboarding — upload + doc-source connectors merged onto one "Sources" step (#37); imports read in the background so the wizard doesn't block (#36).
+- **2026-07-15:** v4 teardown — removed the orphaned v4 routes, components, and the per-user MCP server; app is v1-only (#34).
 - **2026-07-14:** Repositioned Soultech back to the v1 vision and shipped to production — structured ten-category profile, paste-in import, personalized chat (PRs #24-#31). Rewrote PROJECT.md to match; noted the pending v4 teardown, the Clerk dev-instance and factory-gate flags.
 - **2026-07-14:** Stage 3 — personalized chat + `compileProfile` (#31).
 - **2026-07-14:** Settings — full account wipe (#30).
