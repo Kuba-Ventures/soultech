@@ -69,7 +69,7 @@ const groups: NavGroup[] = [
     group: "Talk",
     items: [
       {
-        href: "/chat",
+        href: "/talk",
         label: "Chat",
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
