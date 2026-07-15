@@ -40,7 +40,7 @@ const CONNECTORS = [
 export function OnboardingWizard({ initialCount }: Props) {
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const [count, setCount] = useState(initialCount);
+  const [submitted, setSubmitted] = useState(initialCount > 0);
   const [raw, setRaw] = useState("");
   const [copied, setCopied] = useState(false);
   const [note, setNote] = useState<string | null>(null);
@@ -72,12 +72,9 @@ export function OnboardingWizard({ initialCount }: Props) {
     startTransition(async () => {
       const r = await wizardPasteImport({ rawExport: raw });
       if (r.ok) {
-        setCount(r.profile.items.length);
+        setSubmitted(true);
         setRaw("");
-        setNote(
-          `Added ${r.added} item${r.added === 1 ? "" : "s"} from your paste.` +
-            (r.filtered > 0 ? ` Left out ${r.filtered} with sensitive details.` : ""),
-        );
+        setNote("Reading it in the background. Keep going, it'll be in your profile shortly.");
       } else setError(r.error);
     });
   }
@@ -93,11 +90,8 @@ export function OnboardingWizard({ initialCount }: Props) {
     startTransition(async () => {
       const r = await wizardUploadDoc(fd);
       if (r.ok) {
-        setCount(r.profile.items.length);
-        setNote(
-          `Added ${r.added} item${r.added === 1 ? "" : "s"} from ${file.name}.` +
-            (r.filtered > 0 ? ` Left out ${r.filtered} with sensitive details.` : ""),
-        );
+        setSubmitted(true);
+        setNote(`Reading ${file.name} in the background. Keep going.`);
       } else setError(r.error);
     });
   }
@@ -249,9 +243,9 @@ export function OnboardingWizard({ initialCount }: Props) {
           <div className="animate-fade-up">
             <h2 className="font-display text-3xl text-[var(--text)]">You&apos;re set up</h2>
             <p className="mt-3 max-w-xl text-[var(--t-dim)]">
-              {count > 0
-                ? `Soultech has ${count} thing${count === 1 ? "" : "s"} in your profile to start from. You can review, edit, or add more anytime from your profile.`
-                : "You skipped the inputs, and that's fine. You can build your profile anytime from the Import screen. Head to your dashboard to get started."}
+              {submitted
+                ? "Soultech is reading what you shared and building your profile now. Head to your dashboard, it'll fill in over the next few seconds."
+                : "You skipped the inputs, and that's fine. You can build your profile anytime from the Sources screen. Head to your dashboard to get started."}
             </p>
           </div>
         )}
@@ -270,9 +264,9 @@ export function OnboardingWizard({ initialCount }: Props) {
           )}
         </div>
         <div className="flex items-center gap-3">
-          <span className="font-mono text-xs text-[var(--t-faint)]">
-            {count} in profile
-          </span>
+          {submitted && (
+            <span className="font-mono text-xs text-[var(--t-faint)]">reading…</span>
+          )}
           {step < STEPS.length - 1 ? (
             <button type="button" onClick={next} className={primary}>
               {step === 0 ? "Get started" : "Next"}
