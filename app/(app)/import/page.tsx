@@ -1,16 +1,17 @@
 import { getCurrentMember } from "@/lib/db/members";
-import { getProfile } from "@/lib/profile/v1/store";
+import { getSourcesWithCounts } from "@/lib/profile/v1/store";
 import { connectionsConfigured } from "@/lib/connections/crypto";
 import { getConnectionStatus } from "@/lib/connections/store";
-import { ImportPortrait } from "@/components/app/ImportPortrait";
+import { blobConfigured } from "@/lib/uploads/userFiles";
+import { SourcesManager } from "@/components/app/SourcesManager";
 
 export const dynamic = "force-dynamic";
-// Room for the background Notion pull kicked off by connect via after().
-export const maxDuration = 60;
+// Room for synchronous paste/upload parsing and the background Notion pull.
+export const maxDuration = 120;
 
 export default async function ImportPage() {
   const member = await getCurrentMember();
-  const profile = await getProfile(member.id);
+  const sources = await getSourcesWithCounts(member.id);
   const notionEnabled = connectionsConfigured();
   const notion = notionEnabled
     ? await getConnectionStatus(member.id, "notion")
@@ -23,13 +24,15 @@ export default async function ImportPage() {
         Where your profile comes from
       </h1>
       <p className="mb-6 max-w-2xl text-[var(--t-dim)]">
-        Feed Soultech what it learns from. Import a self-portrait your ChatGPT or Claude
-        writes, and soon connect the tools where your writing and taste already live.
+        Everything Soultech learns from, in one place. Import from your AI, upload
+        documents, connect a tool, or add your own. Each source is yours to add or remove
+        anytime.
       </p>
-      <ImportPortrait
-        initialProfile={profile}
+      <SourcesManager
+        initialSources={sources}
         notionEnabled={notionEnabled}
-        notion={notion}
+        notionConnected={notion.connected}
+        storesFiles={blobConfigured()}
       />
     </section>
   );
