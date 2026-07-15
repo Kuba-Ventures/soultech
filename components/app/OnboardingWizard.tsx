@@ -74,7 +74,10 @@ export function OnboardingWizard({ initialCount }: Props) {
       if (r.ok) {
         setCount(r.profile.items.length);
         setRaw("");
-        setNote(`Added ${r.added} item${r.added === 1 ? "" : "s"} from your paste.`);
+        setNote(
+          `Added ${r.added} item${r.added === 1 ? "" : "s"} from your paste.` +
+            (r.filtered > 0 ? ` Left out ${r.filtered} with sensitive details.` : ""),
+        );
       } else setError(r.error);
     });
   }
@@ -91,7 +94,10 @@ export function OnboardingWizard({ initialCount }: Props) {
       const r = await wizardUploadDoc(fd);
       if (r.ok) {
         setCount(r.profile.items.length);
-        setNote(`Added ${r.added} item${r.added === 1 ? "" : "s"} from ${file.name}.`);
+        setNote(
+          `Added ${r.added} item${r.added === 1 ? "" : "s"} from ${file.name}.` +
+            (r.filtered > 0 ? ` Left out ${r.filtered} with sensitive details.` : ""),
+        );
       } else setError(r.error);
     });
   }
