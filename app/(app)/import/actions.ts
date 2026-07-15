@@ -102,7 +102,7 @@ export async function importProviderPaste(input: {
     revalidatePath("/import");
     return { ok: true, sources, added, filtered };
   } catch (err) {
-    return fail(err, "Something went wrong importing that. Try again in a moment.");
+    return fail(err, "Couldn't import that. Try again in a moment.");
   }
 }
 
