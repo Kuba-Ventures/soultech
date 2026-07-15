@@ -12,9 +12,9 @@ import { BrandIcon } from "@/components/ui/BrandIcon";
 
 type Props = { initialCount: number };
 
-const STEPS = ["Welcome", "Paste", "Upload", "Connect", "Done"] as const;
+const STEPS = ["Welcome", "Paste", "Sources", "Connect", "Done"] as const;
 
-// Kinds of documents worth uploading — shown as examples on the upload step.
+// Kinds of documents worth uploading — shown as examples on the sources step.
 const UPLOAD_EXAMPLES = [
   "Memos",
   "Writing samples",
@@ -28,13 +28,20 @@ const UPLOAD_EXAMPLES = [
 
 // Connector tiles are visual-only for now — real OAuth isn't built yet.
 // `brand` keys map to real logos via BrandIcon (simple-icons).
-const CONNECTORS = [
+//
+// Doc sources feed the profile directly (your writing → text → profile), so
+// they live on the Sources step next to file upload. Other tools go on the
+// following step.
+const DOC_SOURCES = [
   { name: "Google Drive", brand: "googledrive" },
   { name: "Gmail", brand: "gmail" },
   { name: "Notion", brand: "notion" },
+];
+const OTHER_CONNECTORS = [
+  { name: "Spotify", brand: "spotify" },
+  { name: "Raycast", brand: "raycast" },
   { name: "Google Calendar", brand: "googlecalendar" },
   { name: "LinkedIn", brand: "linkedin" },
-  { name: "Spotify", brand: "spotify" },
 ];
 
 export function OnboardingWizard({ initialCount }: Props) {
@@ -183,12 +190,17 @@ export function OnboardingWizard({ initialCount }: Props) {
 
         {step === 2 && (
           <div className="animate-fade-up">
-            <h2 className="font-display text-2xl text-[var(--text)]">Upload documents</h2>
+            <h2 className="font-display text-2xl text-[var(--text)]">Add your sources</h2>
             <p className="mt-2 text-sm text-[var(--t-dim)]">
-              Add things you&apos;ve written: notes, essays, docs. Soultech reads how you
-              write and reason into your profile. .txt, .md, or .pdf.
+              Bring in things you&apos;ve written so Soultech reads how you write and
+              reason. Upload files, or connect where your writing already lives.
             </p>
-            <div className="mt-4 flex flex-wrap gap-2">
+
+            <div className="mt-5 text-xs uppercase tracking-wide text-[var(--t-faint)]">
+              Upload files
+            </div>
+            <p className="mt-1 text-sm text-[var(--t-dim)]">.txt, .md, or .pdf</p>
+            <div className="mt-2 flex flex-wrap gap-2">
               {UPLOAD_EXAMPLES.map((ex) => (
                 <span
                   key={ex}
@@ -204,9 +216,17 @@ export function OnboardingWizard({ initialCount }: Props) {
               accept=".txt,.md,.markdown,.pdf"
               onChange={onFile}
               disabled={pending}
-              className="mt-4 block w-full text-sm text-[var(--t-dim)] file:mr-4 file:rounded-lg file:border file:border-[var(--line-2)] file:bg-[var(--surface-2)] file:px-4 file:py-2 file:text-sm file:font-medium file:text-[var(--text)] hover:file:bg-white/10"
+              className="mt-3 block w-full text-sm text-[var(--t-dim)] file:mr-4 file:rounded-lg file:border file:border-[var(--line-2)] file:bg-[var(--surface-2)] file:px-4 file:py-2 file:text-sm file:font-medium file:text-[var(--text)] hover:file:bg-white/10"
             />
-            {pending && <p className="mt-3 text-sm text-[var(--t-faint)]">Reading your document…</p>}
+
+            <div className="mt-6 text-xs uppercase tracking-wide text-[var(--t-faint)]">
+              Connect &amp; pull
+            </div>
+            <p className="mt-1 text-sm text-[var(--t-dim)]">
+              Pull your docs straight from where they live. Connecting is coming soon; for
+              now, upload or paste.
+            </p>
+            <ConnectorTiles list={DOC_SOURCES} />
           </div>
         )}
 
@@ -214,28 +234,10 @@ export function OnboardingWizard({ initialCount }: Props) {
           <div className="animate-fade-up">
             <h2 className="font-display text-2xl text-[var(--text)]">Connect your tools</h2>
             <p className="mt-2 text-sm text-[var(--t-dim)]">
-              Soon you&apos;ll be able to connect these so Soultech keeps learning as you
-              work. Not available yet, but skip ahead and you can connect later.
+              Soon you&apos;ll connect these so Soultech keeps learning as you work. Not
+              available yet, but skip ahead and you can connect later.
             </p>
-            <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {CONNECTORS.map((c) => (
-                <div
-                  key={c.name}
-                  aria-disabled
-                  className="flex items-center justify-between gap-2 rounded-lg border border-[var(--line)] bg-[var(--surface)] px-3 py-3 text-sm text-[var(--t-dim)] opacity-70"
-                >
-                  <span className="flex items-center gap-2.5">
-                    <span className="text-[var(--text)]">
-                      <BrandIcon brand={c.brand} size={18} fallback={c.name[0]} />
-                    </span>
-                    {c.name}
-                  </span>
-                  <span className="rounded-full border border-[var(--line-2)] px-2 py-0.5 text-[10px] uppercase tracking-wide text-[var(--t-faint)]">
-                    Soon
-                  </span>
-                </div>
-              ))}
-            </div>
+            <ConnectorTiles list={OTHER_CONNECTORS} />
           </div>
         )}
 
@@ -283,6 +285,32 @@ export function OnboardingWizard({ initialCount }: Props) {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+// Visual connector tiles (real OAuth is a follow-up). Used on the Sources step
+// for doc sources and on the Connect step for other tools.
+function ConnectorTiles({ list }: { list: { name: string; brand: string }[] }) {
+  return (
+    <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+      {list.map((c) => (
+        <div
+          key={c.name}
+          aria-disabled
+          className="flex items-center justify-between gap-2 rounded-lg border border-[var(--line)] bg-[var(--surface)] px-3 py-3 text-sm text-[var(--t-dim)] opacity-70"
+        >
+          <span className="flex items-center gap-2.5">
+            <span className="text-[var(--text)]">
+              <BrandIcon brand={c.brand} size={18} fallback={c.name[0]} />
+            </span>
+            {c.name}
+          </span>
+          <span className="rounded-full border border-[var(--line-2)] px-2 py-0.5 text-[10px] uppercase tracking-wide text-[var(--t-faint)]">
+            Soon
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
