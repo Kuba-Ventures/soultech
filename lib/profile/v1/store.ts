@@ -222,3 +222,29 @@ export async function clearOnboardingV1Done(memberId: string): Promise<void> {
   delete next[ONBOARDING_KEY];
   await db.update(members).set({ settings: next }).where(eq(members.id, memberId));
 }
+
+// Lightweight chat calibration signals ("closer" / "not quite" taps). Stored
+// raw for now; the full feedback loop (folding these back into the profile) is
+// deferred. Bounded so the JSON blob can't grow without limit.
+const CALIBRATION_KEY = "chatCalibrationV1";
+const CALIBRATION_MAX = 200;
+
+export type CalibrationSignal = "closer" | "not_quite";
+
+export async function recordCalibration(
+  memberId: string,
+  signal: CalibrationSignal,
+  excerpt: string,
+): Promise<void> {
+  const db = getDb();
+  const settings = await readSettings(memberId);
+  const prior = Array.isArray(settings[CALIBRATION_KEY])
+    ? (settings[CALIBRATION_KEY] as unknown[])
+    : [];
+  const entry = { signal, excerpt: excerpt.slice(0, 280), at: new Date().toISOString() };
+  const next = [...prior, entry].slice(-CALIBRATION_MAX);
+  await db
+    .update(members)
+    .set({ settings: { ...settings, [CALIBRATION_KEY]: next } })
+    .where(eq(members.id, memberId));
+}
