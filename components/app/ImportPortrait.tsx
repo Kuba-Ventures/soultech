@@ -16,6 +16,7 @@ export function ImportPortrait({ initialProfile }: Props) {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(initialProfile);
+  const [filtered, setFiltered] = useState(0);
   const [pending, startTransition] = useTransition();
 
   async function copyPrompt() {
@@ -34,6 +35,7 @@ export function ImportPortrait({ initialProfile }: Props) {
       const result = await importPortraitAction({ rawExport: raw });
       if (result.ok) {
         setProfile(result.profile);
+        setFiltered(result.filtered);
         setRaw("");
       } else {
         setError(result.error);
@@ -116,6 +118,12 @@ export function ImportPortrait({ initialProfile }: Props) {
             Soultech read your export into the ten-category model of who you are. Review,
             edit, or delete any of it from your profile.
           </p>
+          {filtered > 0 && (
+            <p className="mt-2 text-sm text-[var(--t-faint)]">
+              Left out {filtered} item{filtered === 1 ? "" : "s"} with sensitive details
+              (health, financial, or location). Soultech doesn&apos;t store those.
+            </p>
+          )}
           <Link
             href="/profile"
             className="mt-4 inline-flex rounded-lg bg-[var(--amber)] px-5 py-2 text-sm font-semibold text-black transition hover:bg-[var(--amber-soft)]"

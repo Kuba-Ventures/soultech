@@ -3,7 +3,11 @@
 import { getCurrentMember } from "@/lib/db/members";
 import { logAudit } from "@/lib/audit";
 import { AppError, isAppError } from "@/lib/errors";
-import { parseExport, parseText } from "@/lib/profile/v1/parse";
+import {
+  parseExport,
+  parseText,
+  partitionBySensitivity,
+} from "@/lib/profile/v1/parse";
 import {
   appendParsedProfile,
   markOnboardingV1Done,
@@ -12,7 +16,7 @@ import { extractTextFromFile } from "@/lib/profile/v1/extractText";
 import type { Profile } from "@/lib/profile/v1/types";
 
 export type WizardImportResult =
-  | { ok: true; profile: Profile; added: number }
+  | { ok: true; profile: Profile; added: number; filtered: number }
   | { ok: false; error: string };
 
 export type WizardFinishResult = { ok: true } | { ok: false; error: string };
@@ -24,15 +28,16 @@ export async function wizardPasteImport(input: {
   try {
     const member = await getCurrentMember();
     const parsed = await parseExport(input.rawExport ?? "");
-    const profile = await appendParsedProfile(member.id, parsed);
+    const { kept, dropped } = partitionBySensitivity(parsed);
+    const profile = await appendParsedProfile(member.id, kept);
     await logAudit({
       memberId: member.id,
       actor: "member",
       action: "profile.v1.imported",
       targetType: "profile",
-      details: { via: "wizard-paste", added: parsed.length },
+      details: { via: "wizard-paste", added: kept.length, filtered: dropped.length },
     });
-    return { ok: true, profile, added: parsed.length };
+    return { ok: true, profile, added: kept.length, filtered: dropped.length };
   } catch (err) {
     return fail(err, "Couldn't import that. Try again in a moment.");
   }
@@ -48,15 +53,21 @@ export async function wizardUploadDoc(formData: FormData): Promise<WizardImportR
     const member = await getCurrentMember();
     const text = await extractTextFromFile(file);
     const parsed = await parseText(text, { defaultSource: `upload: ${file.name}` });
-    const profile = await appendParsedProfile(member.id, parsed);
+    const { kept, dropped } = partitionBySensitivity(parsed);
+    const profile = await appendParsedProfile(member.id, kept);
     await logAudit({
       memberId: member.id,
       actor: "member",
       action: "profile.v1.imported",
       targetType: "profile",
-      details: { via: "wizard-upload", filename: file.name, added: parsed.length },
+      details: {
+        via: "wizard-upload",
+        filename: file.name,
+        added: kept.length,
+        filtered: dropped.length,
+      },
     });
-    return { ok: true, profile, added: parsed.length };
+    return { ok: true, profile, added: kept.length, filtered: dropped.length };
   } catch (err) {
     return fail(err, "Couldn't read that document. Try another file.");
   }
