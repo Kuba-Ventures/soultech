@@ -10,15 +10,13 @@ export default async function ImportPage() {
 
   return (
     <section className="screen on">
-      <div className="eyebrow rise">Import</div>
+      <div className="eyebrow rise">Sources</div>
       <h1 className="mb-2 font-display text-2xl text-[var(--text)]">
-        Bring in your profile
+        Where your profile comes from
       </h1>
       <p className="mb-6 max-w-2xl text-[var(--t-dim)]">
-        Soultech reads a self-portrait your existing ChatGPT or Claude can already write,
-        a structured model of how you communicate, think, and learn. Copy the prompt, run
-        it wherever you chat today, and paste the result back. No integrations or
-        permissions needed.
+        Feed Soultech what it learns from. Import a self-portrait your ChatGPT or Claude
+        writes, and soon connect the tools where your writing and taste already live.
       </p>
       <ImportPortrait initialProfile={profile} />
     </section>

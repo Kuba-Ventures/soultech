@@ -30,10 +30,10 @@ const groups: NavGroup[] = [
       },
       {
         href: "/import",
-        label: "Import",
+        label: "Sources",
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-            <path d="M12 3v12M8 11l4 4 4-4M5 21h14" />
+            <path d="M4 7h16M4 12h16M4 17h10" />
           </svg>
         ),
       },
