@@ -24,9 +24,9 @@ export default async function ImportPage() {
         Where your profile comes from
       </h1>
       <p className="mb-6 max-w-2xl text-[var(--t-dim)]">
-        Everything Soultech learns from, in one place. Import from your AI, upload
-        documents, connect a tool, or add your own. Each source is yours to add or remove
-        anytime.
+        Everything Soultech learns from, in one place. Import from Claude or ChatGPT,
+        upload documents, connect a tool, or add your own. Each source is yours to add
+        or remove anytime.
       </p>
       <SourcesManager
         initialSources={sources}

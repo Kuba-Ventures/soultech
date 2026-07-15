@@ -61,7 +61,9 @@ export function SourcesManager({
 
   function addedNote(added: number, filtered: number) {
     const bits = [`Added ${added} item${added === 1 ? "" : "s"}`];
-    if (filtered > 0) bits.push(`left out ${filtered} sensitive`);
+    if (filtered > 0) {
+      bits.push(`left out ${filtered} sensitive item${filtered === 1 ? "" : "s"}`);
+    }
     setNote(`${bits.join(", ")}. See them on your profile.`);
   }
 
@@ -270,7 +272,7 @@ export function SourcesManager({
               <a href="https://www.notion.so/my-integrations" target="_blank" rel="noreferrer" className="text-[var(--cool-soft)] underline">
                 notion.so/my-integrations
               </a>
-              , share the pages you want Soultech to read with it, then paste the token.
+              , share the pages you want Soultech to read, then paste the token here.
             </p>
             <input
               type="password"
@@ -321,8 +323,8 @@ export function SourcesManager({
         <div className="font-display text-lg text-[var(--text)]">Your sources</div>
         {sources.length === 0 ? (
           <p className="mt-2 text-sm text-[var(--t-faint)]">
-            Nothing yet. Add a source above and it shows up here, with what it taught
-            Soultech and a way to remove it.
+            Nothing yet. Add a source above and it will show up here, with how much it
+            taught Soultech and a way to remove it.
           </p>
         ) : (
           <ul className="mt-4 flex flex-col gap-2">
@@ -453,7 +455,7 @@ function kindLabel(kind: SourceWithCount["kind"]): string {
     case "custom":
       return "Custom";
     case "connection":
-      return "Connected";
+      return "Connection";
   }
 }
 
