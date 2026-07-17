@@ -45,11 +45,19 @@ function ringGradient(segments: LearnedSegment[]): string {
 type Props = {
   percent: number;
   segments: LearnedSegment[];
+  /**
+   * The slices still missing from the ring, from `remainingSegments`. Rendered
+   * as the "Not yet added" group so a member can see what's left to reach 100%.
+   * Optional so older callers (and the empty state) degrade to just the donut.
+   */
+  remaining?: LearnedSegment[];
 };
 
-export function LearnedDonut({ percent, segments }: Props) {
+export function LearnedDonut({ percent, segments, remaining = [] }: Props) {
+  const hasLegend = segments.length > 0 || remaining.length > 0;
   return (
-    <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-4">
+    // items-start so the two-group legend can grow taller than the donut.
+    <div className="mt-4 flex flex-wrap items-start gap-x-6 gap-y-4">
       <div
         className="relative h-[116px] w-[116px] flex-none"
         role="img"
@@ -70,21 +78,62 @@ export function LearnedDonut({ percent, segments }: Props) {
           </div>
         </div>
       </div>
-      {segments.length > 0 && (
+      {hasLegend && (
         // Sits beside the donut when there's room, wraps cleanly below it when
-        // the card is narrow. Labels break between words only — never mid-word.
-        <ul className="grid flex-[1_1_11rem] gap-1.5 text-[13px] text-[var(--t-dim)]">
-          {segments.map((seg) => (
-            <li key={seg.key} className="flex items-center gap-2">
-              <span
-                className="h-2 w-2 flex-none rounded-[2px]"
-                style={{ background: SEGMENT_COLOR[seg.key] }}
-              />
-              <span>{seg.label}</span>
-            </li>
-          ))}
-        </ul>
+        // the card is narrow. Two groups — what's learned, and what's left.
+        <div className="flex-[1_1_12rem] space-y-3.5">
+          {segments.length > 0 && (
+            <LegendGroup title="Learned" total={percent} items={segments} filled />
+          )}
+          {remaining.length > 0 && (
+            <LegendGroup title="Not yet added" total={100 - percent} items={remaining} />
+          )}
+        </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * One legend column. `filled` slices carry a solid swatch (points already
+ * earned); the rest are drawn hollow in the same hue (headroom the member can
+ * still fill). Each row shows its share of the ring; the header totals them.
+ */
+function LegendGroup({
+  title,
+  total,
+  items,
+  filled = false,
+}: {
+  title: string;
+  total: number;
+  items: LearnedSegment[];
+  filled?: boolean;
+}) {
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-2 font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--t-faint)]">
+        <span>{title}</span>
+        <span className="[font-variant-numeric:tabular-nums]">{Math.round(total)}%</span>
+      </div>
+      <ul className="mt-1.5 grid gap-1.5 text-[13px] text-[var(--t-dim)]">
+        {items.map((seg) => (
+          <li key={seg.key} className="flex items-center gap-2">
+            <span
+              className="h-2 w-2 flex-none rounded-[2px]"
+              style={
+                filled
+                  ? { background: SEGMENT_COLOR[seg.key] }
+                  : { border: `1px solid ${SEGMENT_COLOR[seg.key]}`, opacity: 0.55 }
+              }
+            />
+            <span className="flex-1">{seg.label}</span>
+            <span className="[font-variant-numeric:tabular-nums] text-[var(--t-faint)]">
+              {Math.round(seg.pct)}%
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

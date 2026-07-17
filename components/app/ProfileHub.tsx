@@ -26,6 +26,8 @@ type Knowledge = {
   percent: number;
   /** The donut slices behind the number — one per contributing section + breadth. */
   segments: LearnedSegment[];
+  /** The still-missing slices — headroom to 100%, for the "Not yet added" group. */
+  remaining: LearnedSegment[];
   /** Up to three ways to raise it, thinnest categories first. */
   suggestions: Suggestion[];
 };
@@ -164,7 +166,11 @@ export function ProfileHub({ initialProfile, name, portrait, traits, knowledge }
         <span className="font-mono text-xs font-medium uppercase tracking-[0.12em] text-[var(--t-faint)]">
           Learned
         </span>
-        <LearnedDonut percent={knowledge.percent} segments={knowledge.segments} />
+        <LearnedDonut
+          percent={knowledge.percent}
+          segments={knowledge.segments}
+          remaining={knowledge.remaining}
+        />
         {knowledge.suggestions.length > 0 && (
           <div className="mt-4 border-t border-[var(--line)] pt-3.5">
             <div className="font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--t-faint)]">

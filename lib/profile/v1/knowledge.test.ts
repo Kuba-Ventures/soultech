@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { computeKnowledge, learnedSegments, suggestImprovements } from "./knowledge";
+import {
+  computeKnowledge,
+  learnedSegments,
+  remainingSegments,
+  suggestImprovements,
+} from "./knowledge";
 import { CATEGORY_KEYS } from "./types";
 import type { CategoryKey, ProfileItem, SourceEntry, SourceKind } from "./types";
 
@@ -129,6 +134,47 @@ describe("learnedSegments", () => {
     ];
     const segs = learnedSegments(computeKnowledge(items, []));
     expect(segs.map((s) => s.key)).toEqual(["how_you_communicate"]);
+  });
+});
+
+describe("remainingSegments", () => {
+  const sum = (segs: { pct: number }[]) => segs.reduce((a, s) => a + s.pct, 0);
+
+  it("fills the whole ring for an empty profile (nothing learned yet)", () => {
+    const k = computeKnowledge([], []);
+    expect(sum(remainingSegments(k))).toBeCloseTo(100, 5);
+  });
+
+  it("has no missing slices at a true 100%", () => {
+    const k = computeKnowledge(fullProfile(3), sourcesOf("ai", "upload", "connection"));
+    expect(remainingSegments(k)).toEqual([]);
+  });
+
+  it("learned + remaining account for the full ring", () => {
+    const k = computeKnowledge(itemsAcross(4), sourcesOf("ai", "upload"));
+    expect(sum(learnedSegments(k)) + sum(remainingSegments(k))).toBeCloseTo(100, 5);
+  });
+
+  it("remaining sums to the gap to 100% (within rounding)", () => {
+    const k = computeKnowledge(itemsAcross(4), sourcesOf("ai"));
+    expect(Math.round(sum(remainingSegments(k)))).toBe(100 - k.percent);
+  });
+
+  it("carries the full source-variety gap while breadth is unearned", () => {
+    // Full coverage, one source kind → breadth is 0, so all 15 breadth points
+    // remain and show up as the missing "Sources" slice.
+    const k = computeKnowledge(fullProfile(3), sourcesOf("ai"));
+    const breadth = remainingSegments(k).find((s) => s.key === "breadth");
+    expect(breadth?.pct).toBeCloseTo(15, 5);
+  });
+
+  it("drops fully-covered sections from the missing list", () => {
+    // Every category deep except values_and_criteria → only "what you value"
+    // (and the breadth gap) should remain.
+    const items = fullProfile(3).filter((it) => it.category !== "values_and_criteria");
+    const keys = remainingSegments(computeKnowledge(items, sourcesOf("ai"))).map((s) => s.key);
+    expect(keys).toContain("what_you_value");
+    expect(keys).not.toContain("how_you_communicate");
   });
 });
 

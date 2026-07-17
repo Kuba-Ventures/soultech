@@ -163,6 +163,40 @@ export function learnedSegments(k: Knowledge): LearnedSegment[] {
 }
 
 /**
+ * The mirror image of {@link learnedSegments}: the slices still *missing* from
+ * the ring, one per bucket with headroom — each not-yet-full section (the gap
+ * between its current and maximum coverage contribution) plus the unearned part
+ * of the source-variety slice. Every slice is a share of the whole ring, so
+ * `remainingSegments` sums to `100 - percent` and, together with
+ * `learnedSegments`, accounts for the full circle. This is what powers the
+ * "Not yet added" legend: it shows exactly where the points left to 100% live.
+ */
+export function remainingSegments(k: Knowledge): LearnedSegment[] {
+  const scoreByCategory = new Map<CategoryKey, number>(
+    k.byCategory.map((c) => [c.key, c.score]),
+  );
+
+  const segments: LearnedSegment[] = [];
+  for (const section of SECTIONS) {
+    // A category maxes out at a score of 1, so the section's full contribution
+    // is one point per category; the gap is what depth it hasn't reached yet.
+    const gap = section.categories.reduce(
+      (sum, key) => sum + (1 - (scoreByCategory.get(key) ?? 0)),
+      0,
+    );
+    const pct = (gap / CATEGORY_KEYS.length) * COVERAGE_WEIGHT * 100;
+    if (pct > 0.001) segments.push({ key: section.key, label: section.label, pct });
+  }
+
+  const breadthGapPct = (1 - k.breadth) * BREADTH_WEIGHT * 100;
+  if (breadthGapPct > 0.001) {
+    segments.push({ key: "breadth", label: BREADTH_SEGMENT_LABEL, pct: breadthGapPct });
+  }
+
+  return segments;
+}
+
+/**
  * Per-category nudge copy. Each points at an action that already exists today
  * (add / upload / paste a source) rather than a new input surface.
  */
