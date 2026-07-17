@@ -4,8 +4,10 @@ import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import {
   SECTIONS,
+  categoryTag,
   primaryCategoryForSection,
   sectionForCategory,
+  splitLead,
 } from "@/lib/profile/v1/types";
 import type { Profile, ProfileItem, SectionKey } from "@/lib/profile/v1/types";
 import type { LearnedSegment, Suggestion } from "@/lib/profile/v1/knowledge";
@@ -17,16 +19,16 @@ import {
   updateProfileItem,
 } from "@/app/(app)/profile/actions";
 
-// NOTE: the periodic "mirror moment" review would hook in here — same store,
+// NOTE: the periodic "mirror moment" review would hook in here: same store,
 // reuses the mutations below. Not built yet (deferred). Trait chips + portrait
 // are display-only for now; making them editable is a small follow-up.
 
 type Knowledge = {
-  /** 0..100 — how well Soultech knows the member ("Learned %"). */
+  /** 0..100: how well Soultech knows the member ("Learned %"). */
   percent: number;
-  /** The donut slices behind the number — one per contributing section + breadth. */
+  /** The donut slices behind the number: one per contributing section + breadth. */
   segments: LearnedSegment[];
-  /** The still-missing slices — headroom to 100%, for the "Not yet added" group. */
+  /** The still-missing slices: headroom to 100%, for the "Not yet added" group. */
   remaining: LearnedSegment[];
   /** Up to three ways to raise it, thinnest categories first. */
   suggestions: Suggestion[];
@@ -161,7 +163,7 @@ export function ProfileHub({ initialProfile, name, portrait, traits, knowledge }
         </div>
       )}
 
-      {/* Learned % — how well Soultech knows you, sliced by what taught it. */}
+      {/* Learned %: how well Soultech knows you, sliced by what taught it. */}
       <div className="mt-5 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-4">
         <span className="font-mono text-xs font-medium uppercase tracking-[0.12em] text-[var(--t-faint)]">
           Learned
@@ -247,9 +249,38 @@ export function ProfileHub({ initialProfile, name, portrait, traits, knowledge }
                 </div>
               )}
               {!managing && items.length > 0 && section.key !== INTO && (
-                <p className="mt-2 text-[15px] leading-[1.62] text-[#e7e0d4]">
-                  {items.map((i) => i.content).join(" ")}
-                </p>
+                <div className="mt-3 space-y-4">
+                  {section.categories.map((cat) => {
+                    const catItems = items.filter((i) => i.category === cat);
+                    if (catItems.length === 0) return null;
+                    return (
+                      <div key={cat}>
+                        {section.categories.length > 1 && (
+                          <div className="mb-2 flex items-center gap-2.5 font-mono text-[10.5px] uppercase tracking-[0.14em] text-[var(--t-faint)]">
+                            {categoryTag(cat)}
+                            <span aria-hidden className="h-px flex-1 bg-[var(--line)]" />
+                          </div>
+                        )}
+                        <div className="space-y-2.5">
+                          {catItems.map((i) => {
+                            const { lead, rest } = splitLead(i);
+                            return (
+                              <p
+                                key={i.id}
+                                className="text-[15px] leading-[1.55] text-[var(--t-dim)]"
+                              >
+                                <span className="font-semibold text-[var(--amber-soft)]">
+                                  {lead}
+                                </span>
+                                {rest}
+                              </p>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
               {!managing && items.length === 0 && (
                 <p className="mt-1 text-sm text-[var(--t-faint)]">
