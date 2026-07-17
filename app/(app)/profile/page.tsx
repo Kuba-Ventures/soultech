@@ -21,7 +21,7 @@ export default async function ProfilePage() {
   const items = profile?.items ?? [];
   const sources = await listSources(member.id);
   const knowledge = {
-    percent: computeKnowledge(items).percent,
+    percent: computeKnowledge(items, sources).percent,
     suggestions: suggestImprovements(items, sources),
   };
 

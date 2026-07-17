@@ -103,7 +103,7 @@ export async function wizardKnowledge(): Promise<WizardKnowledge> {
     ]);
     const items = profile?.items ?? [];
     return {
-      percent: computeKnowledge(items).percent,
+      percent: computeKnowledge(items, sources).percent,
       suggestions: suggestImprovements(items, sources),
     };
   } catch (err) {

@@ -1,20 +1,26 @@
 /**
  * Soultech v1 — the "Learned %" signal.
  *
- * How well Soultech knows a member, derived purely from their structured
- * profile. The score is category COVERAGE weighted by depth: each of the ten
- * fixed categories is worth an equal share, and a category's share fills in as
- * it gains items, capped so one flooded category can't dominate. Full coverage
- * across all ten categories genuinely reaches 100%.
+ * How well Soultech knows a member, from two things:
+ *   1. COVERAGE (85%) — category coverage weighted by depth. Each of the ten
+ *      fixed categories is worth an equal share, filling in as it gains items,
+ *      capped so one flooded category can't dominate.
+ *   2. BREADTH (15%) — how many independent kinds of source corroborate the
+ *      profile (an AI paste AND an upload AND a live connection). Coverage alone
+ *      tops out at 85%; the last 15% requires source variety.
  *
- * This module is a pure function of the profile (plus the source list, for
- * targeting suggestions) — no I/O, no model calls — so it recomputes live on
- * every profile write and is unit-testable in isolation, like compileProfile.
- * Reference `CATEGORY_KEYS` / `CATEGORIES` from ./types; never re-list them.
+ * So a member who only pastes one AI export reaches ~85%, and adding a file /
+ * connecting Notion carries them to 100% — which keeps "connect a source" an
+ * honest way to raise the number rather than a nudge shown next to a full bar.
+ *
+ * This module is a pure function of the profile + the source list — no I/O, no
+ * model calls — so it recomputes live on every profile write and is
+ * unit-testable in isolation, like compileProfile. Reference `CATEGORY_KEYS` /
+ * `CATEGORIES` from ./types; never re-list them.
  */
 
 import { CATEGORIES, CATEGORY_KEYS } from "./types";
-import type { CategoryKey, ProfileItem, SourceEntry } from "./types";
+import type { CategoryKey, ProfileItem, SourceEntry, SourceKind } from "./types";
 
 /**
  * How "known" a single category is given how many items it holds. Indexed by
@@ -23,6 +29,17 @@ import type { CategoryKey, ProfileItem, SourceEntry } from "./types";
  * score (they still enrich the profile — they just can't inflate coverage).
  */
 const DEPTH_BY_COUNT = [0, 0.55, 0.8, 1] as const;
+
+/** Coverage vs. breadth split of the final score. Must sum to 1. */
+const COVERAGE_WEIGHT = 0.85;
+const BREADTH_WEIGHT = 0.15;
+
+/**
+ * Distinct source kinds that count as "full breadth". At this many independent
+ * kinds the breadth component is maxed; the profile is corroborated from enough
+ * different angles.
+ */
+const BREADTH_TARGET_KINDS = 3;
 
 /** Where every "add more" action lives — the Sources manager (route `/import`). */
 const IMPORT_HREF = "/import";
@@ -38,6 +55,10 @@ export type CategoryStrength = {
 export type Knowledge = {
   /** 0..100, rounded — the headline "Learned %". */
   percent: number;
+  /** 0..1 — the coverage component (category depth), before weighting. */
+  coverage: number;
+  /** 0..1 — the breadth component (source variety), before weighting. */
+  breadth: number;
   /** Per-category strength, in canonical order. */
   byCategory: CategoryStrength[];
 };
@@ -57,8 +78,19 @@ function depthFor(count: number): number {
   return DEPTH_BY_COUNT[Math.min(count, 3)];
 }
 
-/** Compute the Learned % and the per-category breakdown behind it. */
-export function computeKnowledge(items: ProfileItem[]): Knowledge {
+/**
+ * Breadth (0..1) from the number of distinct source kinds. One kind is no
+ * corroboration (0); each additional distinct kind climbs linearly to full
+ * breadth at BREADTH_TARGET_KINDS.
+ */
+function breadthFor(sources: SourceEntry[]): number {
+  const kinds = new Set<SourceKind>(sources.map((s) => s.kind));
+  if (kinds.size <= 1) return 0;
+  return Math.min(kinds.size - 1, BREADTH_TARGET_KINDS - 1) / (BREADTH_TARGET_KINDS - 1);
+}
+
+/** Compute the Learned % (coverage + breadth) and the breakdown behind it. */
+export function computeKnowledge(items: ProfileItem[], sources: SourceEntry[]): Knowledge {
   const counts = new Map<CategoryKey, number>();
   for (const key of CATEGORY_KEYS) counts.set(key, 0);
   for (const it of items) {
@@ -71,8 +103,10 @@ export function computeKnowledge(items: ProfileItem[]): Knowledge {
     return { key: c.key, label: c.label, count, score: depthFor(count) };
   });
 
-  const mean = byCategory.reduce((sum, c) => sum + c.score, 0) / CATEGORY_KEYS.length;
-  return { percent: Math.round(mean * 100), byCategory };
+  const coverage = byCategory.reduce((sum, c) => sum + c.score, 0) / CATEGORY_KEYS.length;
+  const breadth = breadthFor(sources);
+  const percent = Math.round((coverage * COVERAGE_WEIGHT + breadth * BREADTH_WEIGHT) * 100);
+  return { percent, coverage, breadth, byCategory };
 }
 
 /**
@@ -93,15 +127,29 @@ const CATEGORY_NUDGE: Record<CategoryKey, string> = {
 };
 
 /**
- * The top few ways to raise the Learned %, thinnest categories first, phrased
- * as existing actions and all linking to the Sources manager. Returns at most
- * three; empty when the profile is already fully covered.
+ * Source-variety levers, in priority order. Each raises the breadth component
+ * by adding a kind the member doesn't have yet. Draft copy — style-steward
+ * owns the final wording.
+ */
+const BREADTH_LEVERS: { kind: SourceKind; label: string }[] = [
+  { kind: "connection", label: "Connect Notion to pull in more of your writing" },
+  { kind: "upload", label: "Upload a writing sample in your own words" },
+  { kind: "ai", label: "Paste an export from another AI you use" },
+  { kind: "custom", label: "Write a quick note about how you communicate" },
+];
+
+/**
+ * The top few ways to raise the Learned %: thinnest categories first (to lift
+ * coverage), then missing source kinds (to lift breadth). All phrased as
+ * existing actions linking to the Sources manager. Returns at most three, and
+ * empty once the profile is fully covered AND corroborated — so a full bar is
+ * never shown next to a "to learn more" nudge.
  */
 export function suggestImprovements(
   items: ProfileItem[],
   sources: SourceEntry[],
 ): Suggestion[] {
-  const { byCategory } = computeKnowledge(items);
+  const { byCategory } = computeKnowledge(items, sources);
 
   const thinnestFirst = byCategory
     .filter((c) => c.score < 1)
@@ -117,11 +165,15 @@ export function suggestImprovements(
     category: c.key,
   }));
 
-  // One source-diversity nudge: a live connection corroborates the pasted/
-  // uploaded sources, so surface it while there isn't one and there's room.
-  const hasConnection = sources.some((s) => s.kind === "connection");
-  if (!hasConnection && out.length < 3) {
-    out.push({ label: "Connect Notion to pull in more of your writing", href: IMPORT_HREF });
+  // Breadth: only while source variety isn't maxed. Gating on the kind count
+  // (not on the raw score) is what keeps this quiet at 100% — a fully-diverse
+  // profile has nothing here even if it happens to lack, say, a connection.
+  const kinds = new Set<SourceKind>(sources.map((s) => s.kind));
+  if (kinds.size < BREADTH_TARGET_KINDS) {
+    for (const lever of BREADTH_LEVERS) {
+      if (out.length >= 3) break;
+      if (!kinds.has(lever.kind)) out.push({ label: lever.label, href: IMPORT_HREF });
+    }
   }
 
   return out.slice(0, 3);
