@@ -8,7 +8,8 @@ import {
   sectionForCategory,
 } from "@/lib/profile/v1/types";
 import type { Profile, ProfileItem, SectionKey } from "@/lib/profile/v1/types";
-import type { Suggestion } from "@/lib/profile/v1/knowledge";
+import type { LearnedSegment, Suggestion } from "@/lib/profile/v1/knowledge";
+import { LearnedDonut } from "@/components/app/LearnedDonut";
 import {
   addProfileItem,
   deleteAllProfileData,
@@ -23,6 +24,8 @@ import {
 type Knowledge = {
   /** 0..100 — how well Soultech knows the member ("Learned %"). */
   percent: number;
+  /** The donut slices behind the number — one per contributing section + breadth. */
+  segments: LearnedSegment[];
   /** Up to three ways to raise it, thinnest categories first. */
   suggestions: Suggestion[];
 };
@@ -156,32 +159,14 @@ export function ProfileHub({ initialProfile, name, portrait, traits, knowledge }
         </div>
       )}
 
-      {/* Learned % — how well Soultech knows you. */}
+      {/* Learned % — how well Soultech knows you, sliced by what taught it. */}
       <div className="mt-5 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-4">
-        <div className="flex items-baseline justify-between gap-3">
-          <span className="font-mono text-xs font-medium uppercase tracking-[0.12em] text-[var(--t-faint)]">
-            Learned
-          </span>
-          <span className="font-display text-2xl text-[var(--text)]">
-            {knowledge.percent}
-            <span className="ml-0.5 text-sm text-[var(--t-dim)]">%</span>
-          </span>
-        </div>
-        <div
-          className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-[var(--surface-2)]"
-          role="progressbar"
-          aria-valuenow={knowledge.percent}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label={`Soultech has learned ${knowledge.percent}% of you`}
-        >
-          <div
-            className="h-full rounded-full bg-[var(--amber)] transition-[width]"
-            style={{ width: `${knowledge.percent}%` }}
-          />
-        </div>
+        <span className="font-mono text-xs font-medium uppercase tracking-[0.12em] text-[var(--t-faint)]">
+          Learned
+        </span>
+        <LearnedDonut percent={knowledge.percent} segments={knowledge.segments} />
         {knowledge.suggestions.length > 0 && (
-          <div className="mt-3.5">
+          <div className="mt-4 border-t border-[var(--line)] pt-3.5">
             <div className="font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--t-faint)]">
               To learn more
             </div>

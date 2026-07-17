@@ -19,8 +19,14 @@
  * `CATEGORIES` from ./types; never re-list them.
  */
 
-import { CATEGORIES, CATEGORY_KEYS } from "./types";
-import type { CategoryKey, ProfileItem, SourceEntry, SourceKind } from "./types";
+import { CATEGORIES, CATEGORY_KEYS, SECTIONS } from "./types";
+import type {
+  CategoryKey,
+  ProfileItem,
+  SectionKey,
+  SourceEntry,
+  SourceKind,
+} from "./types";
 
 /**
  * How "known" a single category is given how many items it holds. Indexed by
@@ -110,6 +116,53 @@ export function computeKnowledge(items: ProfileItem[], sources: SourceEntry[]): 
 }
 
 /**
+ * One slice of the Learned donut. `pct` is a share of the *whole* ring (0..100),
+ * so the slices plus the empty remainder always sum to 100 and the filled arc
+ * equals `Knowledge.percent`.
+ */
+export type LearnedSegment = {
+  /** A reader-facing section, or the source-variety (breadth) slice. */
+  key: SectionKey | "breadth";
+  label: string;
+  /** Share of the full ring, in percent (0..100). */
+  pct: number;
+};
+
+/** Label for the breadth slice — the source-variety contribution to the score. */
+const BREADTH_SEGMENT_LABEL = "Sources";
+
+/**
+ * Break the Learned % into the slices that produced it, for the profile donut:
+ * one slice per reader-facing section (its categories' coverage contribution)
+ * plus a "Sources" slice for the breadth component. Each slice is expressed as a
+ * share of the whole ring, so summing them gives `Knowledge.percent` and the
+ * rest of the ring is the unlearned remainder. Empty slices are dropped, so the
+ * legend only ever lists sections that actually contribute.
+ */
+export function learnedSegments(k: Knowledge): LearnedSegment[] {
+  const scoreByCategory = new Map<CategoryKey, number>(
+    k.byCategory.map((c) => [c.key, c.score]),
+  );
+
+  const segments: LearnedSegment[] = [];
+  for (const section of SECTIONS) {
+    const scoreSum = section.categories.reduce(
+      (sum, key) => sum + (scoreByCategory.get(key) ?? 0),
+      0,
+    );
+    const pct = (scoreSum / CATEGORY_KEYS.length) * COVERAGE_WEIGHT * 100;
+    if (pct > 0) segments.push({ key: section.key, label: section.label, pct });
+  }
+
+  const breadthPct = k.breadth * BREADTH_WEIGHT * 100;
+  if (breadthPct > 0) {
+    segments.push({ key: "breadth", label: BREADTH_SEGMENT_LABEL, pct: breadthPct });
+  }
+
+  return segments;
+}
+
+/**
  * Per-category nudge copy. Each points at an action that already exists today
  * (add / upload / paste a source) rather than a new input surface.
  */
@@ -134,7 +187,7 @@ const CATEGORY_NUDGE: Record<CategoryKey, string> = {
 const BREADTH_LEVERS: { kind: SourceKind; label: string }[] = [
   { kind: "connection", label: "Connect Notion to pull in more of your writing" },
   { kind: "upload", label: "Upload a writing sample in your own words" },
-  { kind: "ai", label: "Paste an export from another AI you use" },
+  { kind: "ai", label: "Paste an export from an AI you use" },
   { kind: "custom", label: "Write a quick note about how you communicate" },
 ];
 

@@ -2,7 +2,11 @@ import { currentUser } from "@clerk/nextjs/server";
 import { getCurrentMember } from "@/lib/db/members";
 import { getProfile, listSources } from "@/lib/profile/v1/store";
 import { getOrGenerateSummary } from "@/lib/profile/v1/summary";
-import { computeKnowledge, suggestImprovements } from "@/lib/profile/v1/knowledge";
+import {
+  computeKnowledge,
+  learnedSegments,
+  suggestImprovements,
+} from "@/lib/profile/v1/knowledge";
 import { ProfileHub } from "@/components/app/ProfileHub";
 
 export const dynamic = "force-dynamic";
@@ -20,8 +24,10 @@ export default async function ProfilePage() {
   const summary = await getOrGenerateSummary(member.id, profile?.items ?? []);
   const items = profile?.items ?? [];
   const sources = await listSources(member.id);
+  const computed = computeKnowledge(items, sources);
   const knowledge = {
-    percent: computeKnowledge(items, sources).percent,
+    percent: computed.percent,
+    segments: learnedSegments(computed),
     suggestions: suggestImprovements(items, sources),
   };
 

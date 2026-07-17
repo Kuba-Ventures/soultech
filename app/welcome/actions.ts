@@ -13,7 +13,9 @@ import {
 } from "@/lib/profile/v1/store";
 import {
   computeKnowledge,
+  learnedSegments,
   suggestImprovements,
+  type LearnedSegment,
   type Suggestion,
 } from "@/lib/profile/v1/knowledge";
 import { extractTextFromFile } from "@/lib/profile/v1/extractText";
@@ -22,7 +24,11 @@ export type WizardImportResult = { ok: true } | { ok: false; error: string };
 
 export type WizardFinishResult = { ok: true } | { ok: false; error: string };
 
-export type WizardKnowledge = { percent: number; suggestions: Suggestion[] };
+export type WizardKnowledge = {
+  percent: number;
+  segments: LearnedSegment[];
+  suggestions: Suggestion[];
+};
 
 /**
  * Parse + sensitivity-filter + append, run AFTER the response returns so the
@@ -102,13 +108,15 @@ export async function wizardKnowledge(): Promise<WizardKnowledge> {
       listSources(member.id),
     ]);
     const items = profile?.items ?? [];
+    const knowledge = computeKnowledge(items, sources);
     return {
-      percent: computeKnowledge(items, sources).percent,
+      percent: knowledge.percent,
+      segments: learnedSegments(knowledge),
       suggestions: suggestImprovements(items, sources),
     };
   } catch (err) {
     console.error("[welcome.wizardKnowledge]", err);
-    return { percent: 0, suggestions: [] };
+    return { percent: 0, segments: [], suggestions: [] };
   }
 }
 
