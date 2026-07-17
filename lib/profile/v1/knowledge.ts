@@ -185,7 +185,7 @@ const CATEGORY_NUDGE: Record<CategoryKey, string> = {
  * owns the final wording.
  */
 const BREADTH_LEVERS: { kind: SourceKind; label: string }[] = [
-  { kind: "connection", label: "Connect Notion to pull in more of your writing" },
+  { kind: "connection", label: "Connect a writing / document source" },
   { kind: "upload", label: "Upload a writing sample in your own words" },
   { kind: "ai", label: "Paste an export from an AI you use" },
   { kind: "custom", label: "Write a quick note about how you communicate" },

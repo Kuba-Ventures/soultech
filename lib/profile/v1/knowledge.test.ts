@@ -148,7 +148,7 @@ describe("suggestImprovements", () => {
   it("suggests a missing source kind when breadth isn't maxed", () => {
     // Full coverage, only an AI paste → breadth levers should appear.
     const suggestions = suggestImprovements(fullProfile(3), sourcesOf("ai"));
-    expect(suggestions.some((s) => /Notion/.test(s.label))).toBe(true);
+    expect(suggestions.some((s) => /writing \/ document source/.test(s.label))).toBe(true);
     expect(suggestions.length).toBeGreaterThan(0);
   });
 
