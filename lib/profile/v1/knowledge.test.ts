@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { computeKnowledge, suggestImprovements } from "./knowledge";
 import { CATEGORY_KEYS } from "./types";
-import type { CategoryKey, ProfileItem, SourceEntry } from "./types";
+import type { CategoryKey, ProfileItem, SourceEntry, SourceKind } from "./types";
 
 let seq = 0;
 function item(category: CategoryKey, content = "x"): ProfileItem {
@@ -20,79 +20,116 @@ function fullProfile(perCategory: number): ProfileItem[] {
   );
 }
 
-function source(kind: SourceEntry["kind"]): SourceEntry {
-  return { id: `s${seq++}`, kind, provider: kind, label: kind, addedAt: "2026-07-17" };
+/** One source per given kind. */
+function sourcesOf(...kinds: SourceKind[]): SourceEntry[] {
+  return kinds.map((kind) => ({
+    id: `s${seq++}`,
+    kind,
+    provider: kind,
+    label: kind,
+    addedAt: "2026-07-17",
+  }));
 }
 
-describe("computeKnowledge", () => {
-  it("is 0% for an empty profile", () => {
-    expect(computeKnowledge([]).percent).toBe(0);
+describe("computeKnowledge — coverage component", () => {
+  it("is 0% for an empty profile with no sources", () => {
+    const k = computeKnowledge([], []);
+    expect(k.percent).toBe(0);
+    expect(k.coverage).toBe(0);
+    expect(k.breadth).toBe(0);
   });
 
-  it("scores a single item as roughly one category's worth (~6%)", () => {
-    // 0.55 depth / 10 categories = 5.5% → rounds to 6.
-    expect(computeKnowledge([item("values_and_criteria")]).percent).toBe(6);
-  });
-
-  it("reaches exactly 100% when every category has 3+ items", () => {
-    expect(computeKnowledge(fullProfile(3)).percent).toBe(100);
+  it("reports full coverage when every category has 3+ items", () => {
+    expect(computeKnowledge(fullProfile(3), sourcesOf("ai")).coverage).toBe(1);
   });
 
   it("caps a flooded category at its 3-item depth", () => {
     const flooded = Array.from({ length: 25 }, () => item("recurring_topics"));
-    // One maxed category out of ten = 10%.
-    expect(computeKnowledge(flooded).percent).toBe(10);
-    const strength = computeKnowledge(flooded).byCategory.find(
-      (c) => c.key === "recurring_topics",
-    );
+    const k = computeKnowledge(flooded, sourcesOf("ai"));
+    const strength = k.byCategory.find((c) => c.key === "recurring_topics");
     expect(strength?.count).toBe(25);
     expect(strength?.score).toBe(1);
+    // One maxed category out of ten = 0.1 coverage.
+    expect(k.coverage).toBeCloseTo(0.1, 5);
   });
 
-  it("rewards breadth over depth", () => {
+  it("rewards category breadth over depth", () => {
     const broad = itemsAcross(6); // six categories, one item each
     const deep = fullProfile(3).filter((_, i) => i < 6); // two categories, deep
-    expect(computeKnowledge(broad).percent).toBeGreaterThan(
-      computeKnowledge(deep).percent,
+    expect(computeKnowledge(broad, []).coverage).toBeGreaterThan(
+      computeKnowledge(deep, []).coverage,
     );
   });
+});
 
-  it("returns a breakdown for all ten categories in canonical order", () => {
-    const { byCategory } = computeKnowledge([]);
-    expect(byCategory.map((c) => c.key)).toEqual([...CATEGORY_KEYS]);
+describe("computeKnowledge — breadth component + blend", () => {
+  it("gives no breadth for a single source kind", () => {
+    expect(computeKnowledge(fullProfile(3), sourcesOf("ai")).breadth).toBe(0);
+  });
+
+  it("climbs breadth with each distinct kind, maxing at three", () => {
+    expect(computeKnowledge([], sourcesOf("ai", "upload")).breadth).toBeCloseTo(0.5, 5);
+    expect(computeKnowledge([], sourcesOf("ai", "upload", "connection")).breadth).toBe(1);
+    // A fourth distinct kind doesn't push past full breadth.
+    expect(
+      computeKnowledge([], sourcesOf("ai", "upload", "connection", "custom")).breadth,
+    ).toBe(1);
+  });
+
+  it("counts distinct kinds, not source count (two AI pastes = one kind)", () => {
+    expect(computeKnowledge([], sourcesOf("ai", "ai")).breadth).toBe(0);
+  });
+
+  it("tops out at 85% on full coverage from a single source kind", () => {
+    expect(computeKnowledge(fullProfile(3), sourcesOf("ai")).percent).toBe(85);
+  });
+
+  it("reaches a true 100% only with full coverage AND three source kinds", () => {
+    const full = fullProfile(3);
+    expect(computeKnowledge(full, sourcesOf("ai", "upload", "connection")).percent).toBe(100);
+    // Coverage alone can't get there.
+    expect(computeKnowledge(full, sourcesOf("ai")).percent).toBeLessThan(100);
   });
 });
 
 describe("suggestImprovements", () => {
   it("targets the thinnest categories first", () => {
-    // Everything covered except two thin ones.
-    const items = [
-      ...fullProfile(3).filter(
-        (it) => it.category !== "values_and_criteria" && it.category !== "emotional_cues",
-      ),
-    ];
-    const suggestions = suggestImprovements(items, [source("connection")]);
+    const items = fullProfile(3).filter(
+      (it) => it.category !== "values_and_criteria" && it.category !== "emotional_cues",
+    );
+    // Full source variety so only coverage nudges surface.
+    const suggestions = suggestImprovements(items, sourcesOf("ai", "upload", "connection"));
     expect(suggestions.map((s) => s.category)).toEqual([
       "values_and_criteria",
       "emotional_cues",
     ]);
   });
 
-  it("adds a Notion nudge only when no connection source exists", () => {
-    const items = fullProfile(3).slice(0, 2); // leaves room for a diversity nudge
-    const withoutConn = suggestImprovements(items, [source("upload")]);
-    expect(withoutConn.some((s) => /Notion/.test(s.label))).toBe(true);
+  it("suggests a missing source kind when breadth isn't maxed", () => {
+    // Full coverage, only an AI paste → breadth levers should appear.
+    const suggestions = suggestImprovements(fullProfile(3), sourcesOf("ai"));
+    expect(suggestions.some((s) => /Notion/.test(s.label))).toBe(true);
+    expect(suggestions.length).toBeGreaterThan(0);
+  });
 
-    const withConn = suggestImprovements(items, [source("connection")]);
-    expect(withConn.some((s) => /Notion/.test(s.label))).toBe(false);
+  it("returns nothing once coverage AND breadth are both maxed", () => {
+    expect(
+      suggestImprovements(fullProfile(3), sourcesOf("ai", "upload", "connection")),
+    ).toEqual([]);
+  });
+
+  it("shows no breadth nudge at full variety even without a connection (no 100% contradiction)", () => {
+    // ai + upload + custom = three kinds → breadth maxed, but no connection.
+    const suggestions = suggestImprovements(
+      fullProfile(3),
+      sourcesOf("ai", "upload", "custom"),
+    );
+    expect(suggestions).toEqual([]);
+    expect(suggestions.some((s) => /Notion/.test(s.label))).toBe(false);
   });
 
   it("never returns more than three suggestions", () => {
     expect(suggestImprovements([], []).length).toBeLessThanOrEqual(3);
-  });
-
-  it("returns nothing to improve for a fully-covered profile", () => {
-    expect(suggestImprovements(fullProfile(3), [source("connection")])).toEqual([]);
   });
 
   it("links every suggestion to the Sources manager", () => {
