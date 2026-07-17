@@ -114,7 +114,7 @@ function LegendGroup({
     <div>
       <div className="flex items-baseline justify-between gap-2 font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--t-faint)]">
         <span>{title}</span>
-        <span className="[font-variant-numeric:tabular-nums]">{Math.round(total)}%</span>
+        <span className="font-semibold [font-variant-numeric:tabular-nums]">{Math.round(total)}%</span>
       </div>
       <ul className="mt-1.5 grid gap-1.5 text-[13px] text-[var(--t-dim)]">
         {items.map((seg) => (
