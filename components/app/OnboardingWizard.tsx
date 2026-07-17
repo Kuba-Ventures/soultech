@@ -1,12 +1,14 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { EXTRACTION_PROMPT } from "@/lib/profile/v1/extractionPrompt";
 import {
   wizardFinish,
+  wizardKnowledge,
   wizardPasteImport,
   wizardUploadDoc,
+  type WizardKnowledge,
 } from "@/app/welcome/actions";
 import { BrandIcon } from "@/components/ui/BrandIcon";
 
@@ -52,8 +54,35 @@ export function OnboardingWizard({ initialCount }: Props) {
   const [copied, setCopied] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [knowledge, setKnowledge] = useState<WizardKnowledge | null>(null);
   const [pending, startTransition] = useTransition();
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // On the "Done" step, the background import is still landing, so poll the
+  // Learned % a few times and let the number climb as items come in.
+  useEffect(() => {
+    if (step !== STEPS.length - 1 || !submitted) return;
+    let cancelled = false;
+    let attempts = 0;
+    const MAX_POLLS = 8;
+    const fetchOnce = async () => {
+      const k = await wizardKnowledge();
+      if (!cancelled) setKnowledge(k);
+    };
+    fetchOnce();
+    const id = setInterval(() => {
+      attempts += 1;
+      if (attempts >= MAX_POLLS) {
+        clearInterval(id);
+        return;
+      }
+      fetchOnce();
+    }, 1500);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [step, submitted]);
 
   function goDashboard() {
     setError(null);
@@ -246,9 +275,50 @@ export function OnboardingWizard({ initialCount }: Props) {
             <h2 className="font-display text-3xl text-[var(--text)]">You&apos;re set up</h2>
             <p className="mt-3 max-w-xl text-[var(--t-dim)]">
               {submitted
-                ? "Soultech is reading what you shared and building your profile now. Head to your dashboard, it'll fill in over the next few seconds."
-                : "You skipped the inputs, and that's fine. You can build your profile anytime from the Sources screen. Head to your dashboard to get started."}
+                ? "Soultech is reading what you shared and building your profile now. Here's where that stands, and it'll keep filling in as you head to your dashboard."
+                : "You skipped the inputs, and that's fine. You can build your profile anytime, from the Sources screen on your dashboard."}
             </p>
+
+            {submitted && knowledge && knowledge.percent > 0 && (
+              <div className="mt-6 max-w-md rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-4">
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="font-mono text-xs font-medium uppercase tracking-[0.12em] text-[var(--t-faint)]">
+                    Learned
+                  </span>
+                  <span className="font-display text-2xl text-[var(--text)]">
+                    {knowledge.percent}
+                    <span className="ml-0.5 text-sm text-[var(--t-dim)]">%</span>
+                  </span>
+                </div>
+                <div
+                  className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-[var(--surface-2)]"
+                  role="progressbar"
+                  aria-valuenow={knowledge.percent}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label={`Soultech has learned ${knowledge.percent}% of you`}
+                >
+                  <div
+                    className="h-full rounded-full bg-[var(--amber)] transition-[width] duration-700"
+                    style={{ width: `${knowledge.percent}%` }}
+                  />
+                </div>
+                {knowledge.suggestions.length > 0 && (
+                  <div className="mt-3.5">
+                    <div className="font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--t-faint)]">
+                      To learn more
+                    </div>
+                    <ul className="mt-1.5 space-y-1">
+                      {knowledge.suggestions.slice(0, 2).map((s) => (
+                        <li key={s.label} className="text-sm text-[var(--t-dim)]">
+                          {s.label}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
