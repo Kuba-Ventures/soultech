@@ -5,6 +5,7 @@ import { getOrGenerateSummary } from "@/lib/profile/v1/summary";
 import {
   computeKnowledge,
   learnedSegments,
+  remainingSegments,
   suggestImprovements,
 } from "@/lib/profile/v1/knowledge";
 import { ProfileHub } from "@/components/app/ProfileHub";
@@ -28,6 +29,7 @@ export default async function ProfilePage() {
   const knowledge = {
     percent: computed.percent,
     segments: learnedSegments(computed),
+    remaining: remainingSegments(computed),
     suggestions: suggestImprovements(items, sources),
   };
 

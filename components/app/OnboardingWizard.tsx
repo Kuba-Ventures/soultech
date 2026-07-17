@@ -285,7 +285,11 @@ export function OnboardingWizard({ initialCount }: Props) {
                 <span className="font-mono text-xs font-medium uppercase tracking-[0.12em] text-[var(--t-faint)]">
                   Learned
                 </span>
-                <LearnedDonut percent={knowledge.percent} segments={knowledge.segments} />
+                <LearnedDonut
+                  percent={knowledge.percent}
+                  segments={knowledge.segments}
+                  remaining={knowledge.remaining}
+                />
                 {knowledge.suggestions.length > 0 && (
                   <div className="mt-3.5">
                     <div className="font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--t-faint)]">

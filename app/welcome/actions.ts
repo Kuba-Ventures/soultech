@@ -14,6 +14,7 @@ import {
 import {
   computeKnowledge,
   learnedSegments,
+  remainingSegments,
   suggestImprovements,
   type LearnedSegment,
   type Suggestion,
@@ -27,6 +28,7 @@ export type WizardFinishResult = { ok: true } | { ok: false; error: string };
 export type WizardKnowledge = {
   percent: number;
   segments: LearnedSegment[];
+  remaining: LearnedSegment[];
   suggestions: Suggestion[];
 };
 
@@ -112,11 +114,12 @@ export async function wizardKnowledge(): Promise<WizardKnowledge> {
     return {
       percent: knowledge.percent,
       segments: learnedSegments(knowledge),
+      remaining: remainingSegments(knowledge),
       suggestions: suggestImprovements(items, sources),
     };
   } catch (err) {
     console.error("[welcome.wizardKnowledge]", err);
-    return { percent: 0, segments: [], suggestions: [] };
+    return { percent: 0, segments: [], remaining: [], suggestions: [] };
   }
 }
 
