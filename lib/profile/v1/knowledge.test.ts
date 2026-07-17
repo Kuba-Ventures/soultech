@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeKnowledge, suggestImprovements } from "./knowledge";
+import { computeKnowledge, learnedSegments, suggestImprovements } from "./knowledge";
 import { CATEGORY_KEYS } from "./types";
 import type { CategoryKey, ProfileItem, SourceEntry, SourceKind } from "./types";
 
@@ -89,6 +89,46 @@ describe("computeKnowledge — breadth component + blend", () => {
     expect(computeKnowledge(full, sourcesOf("ai", "upload", "connection")).percent).toBe(100);
     // Coverage alone can't get there.
     expect(computeKnowledge(full, sourcesOf("ai")).percent).toBeLessThan(100);
+  });
+});
+
+describe("learnedSegments", () => {
+  const sum = (segs: { pct: number }[]) => segs.reduce((a, s) => a + s.pct, 0);
+
+  it("has no slices for an empty profile", () => {
+    expect(learnedSegments(computeKnowledge([], []))).toEqual([]);
+  });
+
+  it("fills the whole ring at a true 100%", () => {
+    const k = computeKnowledge(fullProfile(3), sourcesOf("ai", "upload", "connection"));
+    const segs = learnedSegments(k);
+    expect(sum(segs)).toBeCloseTo(100, 5);
+    // A slice for every section, plus the breadth slice.
+    expect(segs.some((s) => s.key === "breadth")).toBe(true);
+  });
+
+  it("slices sum to the Learned % (within rounding), leaving the rest unlearned", () => {
+    const k = computeKnowledge(itemsAcross(4), sourcesOf("ai"));
+    // The number shown is rounded; the exact slice fill rounds to it.
+    expect(Math.round(sum(learnedSegments(k)))).toBe(k.percent);
+  });
+
+  it("omits the breadth slice until a second source kind corroborates", () => {
+    const oneKind = learnedSegments(computeKnowledge(fullProfile(3), sourcesOf("ai")));
+    expect(oneKind.some((s) => s.key === "breadth")).toBe(false);
+    const twoKinds = learnedSegments(
+      computeKnowledge(fullProfile(3), sourcesOf("ai", "upload")),
+    );
+    expect(twoKinds.some((s) => s.key === "breadth")).toBe(true);
+  });
+
+  it("drops sections with no coverage from the legend", () => {
+    // Items only in communication_register → only the "how you communicate" section.
+    const items = [
+      { id: "a", category: "communication_register" as const, content: "x", source: "t" },
+    ];
+    const segs = learnedSegments(computeKnowledge(items, []));
+    expect(segs.map((s) => s.key)).toEqual(["how_you_communicate"]);
   });
 });
 
