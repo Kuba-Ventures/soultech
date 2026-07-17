@@ -9,6 +9,7 @@ import {
 } from "@/lib/profile/v1/types";
 import type { Profile, ProfileItem, SectionKey } from "@/lib/profile/v1/types";
 import type { LearnedSegment, Suggestion } from "@/lib/profile/v1/knowledge";
+import { LearnedDonut } from "@/components/app/LearnedDonut";
 import {
   addProfileItem,
   deleteAllProfileData,
@@ -28,45 +29,6 @@ type Knowledge = {
   /** Up to three ways to raise it, thinnest categories first. */
   suggestions: Suggestion[];
 };
-
-/**
- * Donut palette: reader-facing sections in a warm (amber) sweep — the parts of
- * *you* Soultech has read — and the source-variety slice in cool, so breadth
- * reads as corroboration set apart from coverage. Keyed to match the ring order.
- */
-const SEGMENT_COLOR: Record<SectionKey | "breadth", string> = {
-  how_you_learn: "#f2bd76",
-  how_you_communicate: "#f0a84c",
-  how_you_think: "#e2913a",
-  what_you_value: "#cf7d2b",
-  what_youre_into: "#f6d4a6",
-  quirks: "#b8691f",
-  breadth: "#79c6d4",
-};
-
-const RING_TRACK = "rgba(245, 238, 227, 0.06)";
-const RING_GAP = 0.8; // % of the ring blanked between adjacent slices, for legibility
-const DONUT_MASK = "radial-gradient(closest-side, transparent 63%, #000 64%)";
-
-/** Conic-gradient for the Learned donut, built from its slices with thin gaps. */
-function ringGradient(segments: LearnedSegment[]): string {
-  if (segments.length === 0) return RING_TRACK;
-  const stops: string[] = [];
-  let pos = 0;
-  segments.forEach((seg, i) => {
-    const end = Math.min(100, pos + seg.pct);
-    stops.push(`${SEGMENT_COLOR[seg.key]} ${pos}% ${end}%`);
-    pos = end;
-    // A blank slit lets adjacent warm slices stay distinct without a legend glance.
-    if (i < segments.length - 1 && pos < 100) {
-      const gapEnd = Math.min(100, pos + RING_GAP);
-      stops.push(`transparent ${pos}% ${gapEnd}%`);
-      pos = gapEnd;
-    }
-  });
-  if (pos < 100) stops.push(`${RING_TRACK} ${pos}% 100%`);
-  return `conic-gradient(${stops.join(", ")})`;
-}
 
 type Props = {
   initialProfile: Profile | null;
@@ -202,43 +164,7 @@ export function ProfileHub({ initialProfile, name, portrait, traits, knowledge }
         <span className="font-mono text-xs font-medium uppercase tracking-[0.12em] text-[var(--t-faint)]">
           Learned
         </span>
-        <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-4">
-          <div
-            className="relative h-[116px] w-[116px] flex-none"
-            role="img"
-            aria-label={`Soultech has learned ${knowledge.percent}% of you`}
-          >
-            <div
-              className="h-full w-full rounded-full"
-              style={{
-                background: ringGradient(knowledge.segments),
-                WebkitMask: DONUT_MASK,
-                mask: DONUT_MASK,
-              }}
-            />
-            <div className="absolute inset-0 grid place-content-center">
-              <div className="font-display text-[27px] leading-none text-[var(--text)] [font-variant-numeric:tabular-nums]">
-                {knowledge.percent}
-                <span className="ml-0.5 text-[13px] text-[var(--t-dim)]">%</span>
-              </div>
-            </div>
-          </div>
-          {knowledge.segments.length > 0 && (
-            // Sits beside the donut when there's room, wraps cleanly below it when
-            // the card is narrow. Labels break between words only — never mid-word.
-            <ul className="grid flex-[1_1_11rem] gap-1.5 text-[13px] text-[var(--t-dim)]">
-              {knowledge.segments.map((seg) => (
-                <li key={seg.key} className="flex items-center gap-2">
-                  <span
-                    className="h-2 w-2 flex-none rounded-[2px]"
-                    style={{ background: SEGMENT_COLOR[seg.key] }}
-                  />
-                  <span>{seg.label}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        <LearnedDonut percent={knowledge.percent} segments={knowledge.segments} />
         {knowledge.suggestions.length > 0 && (
           <div className="mt-4 border-t border-[var(--line)] pt-3.5">
             <div className="font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--t-faint)]">
