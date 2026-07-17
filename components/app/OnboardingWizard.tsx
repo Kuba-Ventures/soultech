@@ -280,6 +280,22 @@ export function OnboardingWizard({ initialCount }: Props) {
                 : "You skipped the inputs, and that's fine. You can build your profile anytime, from the Sources screen on your dashboard."}
             </p>
 
+            {submitted &&
+              knowledge?.lastImport &&
+              knowledge.lastImport.status !== "ok" && (
+                <div className="mt-6 max-w-md rounded-[var(--radius)] border border-[#5a3b3b] bg-[#2a1c1c] p-4">
+                  <p className="text-sm text-[#e5b7b7]">
+                    {knowledge.lastImport.message ??
+                      "That import didn't add anything. Try again from the Sources screen."}
+                  </p>
+                  {knowledge.lastImport.status === "error" && (
+                    <p className="mt-1.5 text-xs text-[var(--t-faint)]">
+                      Nothing was saved for it, so you can re-add it anytime from your dashboard.
+                    </p>
+                  )}
+                </div>
+              )}
+
             {submitted && knowledge && knowledge.percent > 0 && (
               <div className="mt-6 max-w-md rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-4">
                 <span className="font-mono text-xs font-medium uppercase tracking-[0.12em] text-[var(--t-faint)]">

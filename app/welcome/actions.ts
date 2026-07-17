@@ -8,10 +8,13 @@ import { AppError, isAppError } from "@/lib/errors";
 import { parseText, partitionBySensitivity } from "@/lib/profile/v1/parse";
 import {
   appendParsedProfile,
+  getImportOutcome,
   getProfile,
   listSources,
   markOnboardingV1Done,
+  recordImportOutcome,
   recordSource,
+  type ImportOutcome,
 } from "@/lib/profile/v1/store";
 import type { SourceEntry } from "@/lib/profile/v1/types";
 import {
@@ -33,6 +36,8 @@ export type WizardKnowledge = {
   segments: LearnedSegment[];
   remaining: LearnedSegment[];
   suggestions: Suggestion[];
+  /** Outcome of the member's most recent background import, if any. */
+  lastImport: ImportOutcome | null;
 };
 
 /**
@@ -67,8 +72,31 @@ function queueImport(
           filtered: dropped.length,
         },
       });
+      await recordImportOutcome(memberId, {
+        status: kept.length > 0 ? "ok" : "empty",
+        added: kept.length,
+        label: source.label,
+        ...(kept.length === 0
+          ? {
+              message:
+                "We read that, but it was all personal detail we leave out. Try a source with more about how you communicate, think, or work.",
+            }
+          : {}),
+        at: new Date().toISOString(),
+      });
     } catch (err) {
+      // Background parse can't return an error to the UI, so persist it for the
+      // wizard to surface instead of failing silently.
       console.error("[welcome.queueImport]", err);
+      await recordImportOutcome(memberId, {
+        status: "error",
+        added: 0,
+        label: source.label,
+        message: isAppError(err)
+          ? err.userMessage
+          : "Couldn't read that import. Try again, or a different source.",
+        at: new Date().toISOString(),
+      }).catch((e) => console.error("[welcome.queueImport.outcome]", e));
     }
   });
 }
@@ -132,9 +160,10 @@ export async function wizardUploadDoc(formData: FormData): Promise<WizardImportR
 export async function wizardKnowledge(): Promise<WizardKnowledge> {
   try {
     const member = await getCurrentMember();
-    const [profile, sources] = await Promise.all([
+    const [profile, sources, lastImport] = await Promise.all([
       getProfile(member.id),
       listSources(member.id),
+      getImportOutcome(member.id),
     ]);
     const items = profile?.items ?? [];
     const knowledge = computeKnowledge(items, sources);
@@ -143,10 +172,11 @@ export async function wizardKnowledge(): Promise<WizardKnowledge> {
       segments: learnedSegments(knowledge),
       remaining: remainingSegments(knowledge),
       suggestions: suggestImprovements(items, sources),
+      lastImport,
     };
   } catch (err) {
     console.error("[welcome.wizardKnowledge]", err);
-    return { percent: 0, segments: [], remaining: [], suggestions: [] };
+    return { percent: 0, segments: [], remaining: [], suggestions: [], lastImport: null };
   }
 }
 

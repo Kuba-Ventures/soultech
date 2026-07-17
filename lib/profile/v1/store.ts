@@ -269,6 +269,56 @@ export async function clearOnboardingV1Done(memberId: string): Promise<void> {
   await db.update(members).set({ settings: next }).where(eq(members.id, memberId));
 }
 
+// ---------------------------------------------------------------------------
+// Last import outcome
+//
+// The onboarding wizard parses pasted/uploaded text in the background (see
+// app/welcome/actions.ts::queueImport), so a failure can't be returned to the
+// caller — the response already went out. We persist the outcome of the most
+// recent import here so the wizard can poll it and tell the member when an
+// import found nothing or errored, instead of failing silently.
+// ---------------------------------------------------------------------------
+
+const IMPORT_OUTCOME_KEY = "lastImportV1";
+
+export type ImportOutcome = {
+  /** "ok": items added. "empty": read but nothing usable kept. "error": failed. */
+  status: "ok" | "empty" | "error";
+  /** Items added to the profile (0 for empty/error). */
+  added: number;
+  /** Human label of the source that was attempted. */
+  label: string;
+  /** Member-facing message for empty/error outcomes. */
+  message?: string;
+  /** ISO 8601 timestamp. */
+  at: string;
+};
+
+export async function recordImportOutcome(
+  memberId: string,
+  outcome: ImportOutcome,
+): Promise<void> {
+  const db = getDb();
+  const settings = await readSettings(memberId);
+  await db
+    .update(members)
+    .set({ settings: { ...settings, [IMPORT_OUTCOME_KEY]: outcome } })
+    .where(eq(members.id, memberId));
+}
+
+export async function getImportOutcome(memberId: string): Promise<ImportOutcome | null> {
+  const settings = await readSettings(memberId);
+  const raw = settings[IMPORT_OUTCOME_KEY] as Partial<ImportOutcome> | undefined;
+  if (!raw || typeof raw.status !== "string") return null;
+  return {
+    status: raw.status === "ok" || raw.status === "empty" ? raw.status : "error",
+    added: typeof raw.added === "number" ? raw.added : 0,
+    label: typeof raw.label === "string" && raw.label ? raw.label : "Import",
+    ...(typeof raw.message === "string" && raw.message ? { message: raw.message } : {}),
+    at: typeof raw.at === "string" ? raw.at : new Date().toISOString(),
+  };
+}
+
 // Lightweight chat calibration signals ("closer" / "not quite" taps). Stored
 // raw for now; the full feedback loop (folding these back into the profile) is
 // deferred. Bounded so the JSON blob can't grow without limit.
