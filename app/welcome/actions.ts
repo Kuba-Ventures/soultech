@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { after } from "next/server";
 import { getCurrentMember } from "@/lib/db/members";
 import { logAudit } from "@/lib/audit";
@@ -10,7 +11,9 @@ import {
   getProfile,
   listSources,
   markOnboardingV1Done,
+  recordSource,
 } from "@/lib/profile/v1/store";
+import type { SourceEntry } from "@/lib/profile/v1/types";
 import {
   computeKnowledge,
   learnedSegments,
@@ -33,23 +36,36 @@ export type WizardKnowledge = {
 };
 
 /**
- * Parse + sensitivity-filter + append, run AFTER the response returns so the
- * member isn't blocked on the (slow) model call and can keep moving through
- * the wizard. Errors here can't reach the UI — they're logged; the profile
- * simply won't gain those items.
+ * Parse + sensitivity-filter + append, AND register the source so the import
+ * shows up (and stays removable) on the Sources page. This mirrors the /import
+ * flow's `ingestAsSource`: record the source, then tag every item with its id.
+ * Runs AFTER the response returns so the member isn't blocked on the (slow)
+ * model call and can keep moving through the wizard. Errors here can't reach
+ * the UI — they're logged; the profile simply won't gain those items.
  */
-function queueImport(memberId: string, text: string, source: string): void {
+function queueImport(
+  memberId: string,
+  text: string,
+  source: Omit<SourceEntry, "addedAt">,
+): void {
   after(async () => {
     try {
-      const parsed = await parseText(text, { defaultSource: source });
+      const parsed = await parseText(text, { defaultSource: source.provider });
       const { kept, dropped } = partitionBySensitivity(parsed);
-      await appendParsedProfile(memberId, kept);
+      const entry: SourceEntry = { ...source, addedAt: new Date().toISOString() };
+      await recordSource(memberId, entry);
+      await appendParsedProfile(memberId, kept, entry.id);
       await logAudit({
         memberId,
         actor: "member",
         action: "profile.v1.imported",
-        targetType: "profile",
-        details: { via: source, added: kept.length, filtered: dropped.length },
+        targetType: "source",
+        details: {
+          via: entry.provider,
+          kind: entry.kind,
+          added: kept.length,
+          filtered: dropped.length,
+        },
       });
     } catch (err) {
       console.error("[welcome.queueImport]", err);
@@ -70,7 +86,12 @@ export async function wizardPasteImport(input: {
     if (text.length > 100_000) {
       return { ok: false, error: "That's over the 100,000-character limit. Trim it." };
     }
-    queueImport(member.id, text, "wizard-paste");
+    queueImport(member.id, text, {
+      id: randomUUID(),
+      kind: "ai",
+      provider: "ai",
+      label: "Self-portrait export",
+    });
     return { ok: true };
   } catch (err) {
     return fail(err, "Couldn't start that import. Try again.");
@@ -89,7 +110,13 @@ export async function wizardUploadDoc(formData: FormData): Promise<WizardImportR
     // Extract synchronously — the file bytes only exist during this request.
     // (Throws a friendly error for empty/oversize/unsupported, which surfaces.)
     const text = await extractTextFromFile(file);
-    queueImport(member.id, text, `upload: ${file.name}`);
+    queueImport(member.id, text, {
+      id: randomUUID(),
+      kind: "upload",
+      provider: "file",
+      label: file.name,
+      fileName: file.name,
+    });
     return { ok: true };
   } catch (err) {
     return fail(err, "Couldn't read that document. Try another file.");
