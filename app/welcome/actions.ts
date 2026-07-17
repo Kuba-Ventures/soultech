@@ -7,13 +7,22 @@ import { AppError, isAppError } from "@/lib/errors";
 import { parseText, partitionBySensitivity } from "@/lib/profile/v1/parse";
 import {
   appendParsedProfile,
+  getProfile,
+  listSources,
   markOnboardingV1Done,
 } from "@/lib/profile/v1/store";
+import {
+  computeKnowledge,
+  suggestImprovements,
+  type Suggestion,
+} from "@/lib/profile/v1/knowledge";
 import { extractTextFromFile } from "@/lib/profile/v1/extractText";
 
 export type WizardImportResult = { ok: true } | { ok: false; error: string };
 
 export type WizardFinishResult = { ok: true } | { ok: false; error: string };
+
+export type WizardKnowledge = { percent: number; suggestions: Suggestion[] };
 
 /**
  * Parse + sensitivity-filter + append, run AFTER the response returns so the
@@ -76,6 +85,30 @@ export async function wizardUploadDoc(formData: FormData): Promise<WizardImportR
     return { ok: true };
   } catch (err) {
     return fail(err, "Couldn't read that document. Try another file.");
+  }
+}
+
+/**
+ * Wizard: the current Learned % + top nudges, for the "Done" payoff. Imports
+ * run in the background (see queueImport), so the wizard polls this a few times
+ * as the parse lands and the number climbs. Never throws — a read hiccup just
+ * yields 0% rather than blocking the finish screen.
+ */
+export async function wizardKnowledge(): Promise<WizardKnowledge> {
+  try {
+    const member = await getCurrentMember();
+    const [profile, sources] = await Promise.all([
+      getProfile(member.id),
+      listSources(member.id),
+    ]);
+    const items = profile?.items ?? [];
+    return {
+      percent: computeKnowledge(items).percent,
+      suggestions: suggestImprovements(items, sources),
+    };
+  } catch (err) {
+    console.error("[welcome.wizardKnowledge]", err);
+    return { percent: 0, suggestions: [] };
   }
 }
 
