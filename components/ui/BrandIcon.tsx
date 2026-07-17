@@ -38,6 +38,7 @@ const CUSTOM: Record<string, string> = {
 
 const LU: Record<string, LucideIcon> = {
   chatgpt: Bot,
+  ai: Bot,
   plaid: Landmark,
   location: MapPin,
   api: Webhook,
