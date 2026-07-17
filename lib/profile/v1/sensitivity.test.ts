@@ -9,6 +9,7 @@ function item(sensitivity: ParsedItem["sensitivity"]): ParsedItem {
   return {
     category: "communication_register",
     content: "example",
+    lead: "example",
     source: "import",
     frequency: null,
     sensitivity,

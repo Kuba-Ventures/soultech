@@ -62,6 +62,7 @@ function normalizeItems(raw: unknown): ProfileItem[] {
       id: typeof o.id === "string" && o.id ? o.id : randomUUID(),
       category: o.category,
       content: o.content,
+      ...(typeof o.lead === "string" && o.lead ? { lead: o.lead } : {}),
       source: typeof o.source === "string" && o.source ? o.source : "import",
       ...(typeof o.sourceId === "string" && o.sourceId ? { sourceId: o.sourceId } : {}),
       ...(typeof o.frequency === "number" && Number.isFinite(o.frequency)
@@ -97,6 +98,7 @@ export async function saveParsedProfile(
     id: randomUUID(),
     category: p.category,
     content: p.content,
+    ...(p.lead ? { lead: p.lead } : {}),
     source: p.source,
     ...(p.frequency != null ? { frequency: p.frequency } : {}),
   }));
@@ -195,6 +197,7 @@ export async function appendParsedProfile(
     id: randomUUID(),
     category: p.category,
     content: p.content,
+    ...(p.lead ? { lead: p.lead } : {}),
     source: p.source,
     ...(sourceId ? { sourceId } : {}),
     ...(p.frequency != null ? { frequency: p.frequency } : {}),
