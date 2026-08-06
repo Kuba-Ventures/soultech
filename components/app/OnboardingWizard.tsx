@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { EXTRACTION_PROMPT } from "@/lib/profile/v1/extractionPrompt";
+import { AI_PASTE_SOURCES, type AiSourceKey } from "@/lib/profile/v1/aiSources";
 import {
   wizardFinish,
   wizardKnowledge,
@@ -52,6 +53,9 @@ export function OnboardingWizard({ initialCount }: Props) {
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(initialCount > 0);
   const [raw, setRaw] = useState("");
+  // No default: the member must pick which AI the export is from before adding,
+  // so each paste is tagged and two exports stay distinct in Sources.
+  const [provider, setProvider] = useState<AiSourceKey | null>(null);
   const [copied, setCopied] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -104,13 +108,19 @@ export function OnboardingWizard({ initialCount }: Props) {
   }
 
   function importPaste() {
+    if (!provider) {
+      setError("Pick which AI this export is from first.");
+      return;
+    }
     setError(null);
     setNote(null);
     startTransition(async () => {
-      const r = await wizardPasteImport({ rawExport: raw });
+      const r = await wizardPasteImport({ rawExport: raw, provider });
       if (r.ok) {
         setSubmitted(true);
         setRaw("");
+        // Clear the pick too, so adding a second export is a deliberate choice.
+        setProvider(null);
         setNote("Reading it in the background. Keep going, it'll be in your profile shortly.");
       } else setError(r.error);
     });
@@ -199,6 +209,39 @@ export function OnboardingWizard({ initialCount }: Props) {
             <pre className="mt-4 max-h-56 overflow-auto whitespace-pre-wrap rounded-lg border border-[var(--line)] bg-black/20 p-4 font-mono text-xs leading-relaxed text-[var(--t-dim)]">
               {EXTRACTION_PROMPT}
             </pre>
+
+            <div className="mt-5 font-mono text-[10px] uppercase tracking-[0.11em] text-[var(--t-faint)]">
+              Which AI is this from?
+            </div>
+            <div
+              role="radiogroup"
+              aria-label="Which AI is this export from?"
+              className="mt-2 flex overflow-hidden rounded-lg border border-[var(--line-2)]"
+            >
+              {AI_PASTE_SOURCES.map((s, i) => {
+                const sel = provider === s.key;
+                return (
+                  <button
+                    key={s.key}
+                    type="button"
+                    role="radio"
+                    aria-checked={sel}
+                    onClick={() => setProvider(s.key)}
+                    className={`flex flex-1 items-center justify-center gap-2 px-2 py-2.5 text-[13px] font-semibold transition ${
+                      i > 0 ? "border-l border-[var(--line)]" : ""
+                    } ${
+                      sel
+                        ? "bg-[var(--amber)] text-black"
+                        : "text-[var(--t-dim)] hover:bg-white/5 hover:text-[var(--text)]"
+                    }`}
+                  >
+                    <BrandIcon brand={s.key} size={15} fallback={s.label[0]} />
+                    <span>{s.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
             <p className="mt-4 text-sm text-[var(--t-dim)]">Then paste the result below.</p>
             <textarea
               value={raw}
@@ -210,7 +253,7 @@ export function OnboardingWizard({ initialCount }: Props) {
             <button
               type="button"
               onClick={importPaste}
-              disabled={pending || raw.trim().length === 0}
+              disabled={pending || raw.trim().length === 0 || !provider}
               className={`${primary} mt-3`}
             >
               {pending ? "Reading…" : "Add to my profile"}

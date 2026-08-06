@@ -6,6 +6,7 @@ import { getCurrentMember } from "@/lib/db/members";
 import { logAudit } from "@/lib/audit";
 import { AppError, isAppError } from "@/lib/errors";
 import { parseText, partitionBySensitivity } from "@/lib/profile/v1/parse";
+import { aiSourceLabel, isAiSourceKey } from "@/lib/profile/v1/aiSources";
 import {
   appendParsedProfile,
   getImportOutcome,
@@ -101,14 +102,22 @@ function queueImport(
   });
 }
 
-/** Wizard: paste a self-portrait export. Reads in the background. */
+/**
+ * Wizard: paste a self-portrait export. `provider` is the AI the member picked
+ * (claude / chatgpt / gemini / other) so two exports stay distinct in Sources.
+ * Reads in the background.
+ */
 export async function wizardPasteImport(input: {
   rawExport: string;
+  provider: string;
 }): Promise<WizardImportResult> {
   try {
     const member = await getCurrentMember();
     // Cheap validation up front so real errors still surface; the slow parse
     // is deferred to after().
+    if (!isAiSourceKey(input.provider)) {
+      return { ok: false, error: "Pick which AI this export is from first." };
+    }
     const text = (input.rawExport ?? "").trim();
     if (!text) return { ok: false, error: "Paste your export first." };
     if (text.length > 100_000) {
@@ -117,8 +126,8 @@ export async function wizardPasteImport(input: {
     queueImport(member.id, text, {
       id: randomUUID(),
       kind: "ai",
-      provider: "ai",
-      label: "Self-portrait export",
+      provider: input.provider,
+      label: aiSourceLabel(input.provider),
     });
     return { ok: true };
   } catch (err) {
