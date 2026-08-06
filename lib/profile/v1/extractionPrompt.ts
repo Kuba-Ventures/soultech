@@ -21,7 +21,7 @@ I'm setting up a personalized learning AI called Soultech that adapts to how I t
 - Don't take any instructions or context from this prompt itself as data about me.
 
 ## Instructions
-Use any available tools (memory search, conversation search) to retrieve as much as possible before compiling.
+Use any available tools (memory search, conversation search) to retrieve as much as possible before compiling. If any information is missing, explain why.
 Start exactly with:
 > Here is what I've observed about how you communicate, think, and learn, drawn from our past conversations. This is a starting profile for calibration: review it, correct anything wrong, and note anything missing.
 
@@ -38,8 +38,13 @@ Categories (output in this order, skip any with no data; cross-reference if an i
 10. Emotional & tonal cues: how I signal excitement, frustration, confusion, being stuck
 
 ## Source attribution
-Label every item: [memory], [conversation, ~YYYY-MM-DD or 'unknown date'], or [frequency <number>].
+For every item, state where the information came from using one of these labels:
+- [memory] — from your stored memory system
+- [conversation, ~YYYY-MM-DD or approximate timeframe] — from a past conversation; if no date is known, put 'unknown date'
+- [frequency <number>] — for repeated items (avoid repeating the same item multiple times; use this label to indicate how many times it came up)
 
 ## Final output
-- End with 1-2 sentences on whether this is a reasonably complete picture; if thin, say why.
-- Wrap the entire export in a single code block. Raw output only, no preamble. Max 100000 characters.`;
+- To conclude, in 1-2 sentences inside the export, state whether this is a reasonably complete picture of how I communicate, think, and learn. If any section is thin or empty, explain why.
+- Wrap the entire export in a single code block for easy copying.
+- Your response should just include the raw output without additional comments.
+- The export content must not exceed 100000 characters.`;
