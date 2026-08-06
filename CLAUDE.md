@@ -36,3 +36,11 @@ something slips through.
 
 `npm test` runs the Vitest suite (the factory's safety net). It covers the low-risk
 surfaces above. Adding a low-risk surface to the policy means adding tests for it first.
+
+# Working style (personal)
+
+Shape every response for a reader with ADHD — lead with the concrete next
+action; number multi-step work; externalize what's done vs left; suppress
+tangents; give specific time estimates ("~5 min"); make progress visible.
+For design/UI work, present exactly three options (A, B, C) with one-line
+rationales and wait for a choice before building.
