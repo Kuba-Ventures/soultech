@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { EXTRACTION_PROMPT } from "@/lib/profile/v1/extractionPrompt";
-import { AI_PASTE_SOURCES, type AiSourceKey } from "@/lib/profile/v1/aiSources";
+import { AI_PASTE_SOURCES, aiSourceLabel, type AiSourceKey } from "@/lib/profile/v1/aiSources";
 import {
   wizardFinish,
   wizardKnowledge,
@@ -52,10 +52,20 @@ export function OnboardingWizard({ initialCount }: Props) {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(initialCount > 0);
-  const [raw, setRaw] = useState("");
   // No default: the member must pick which AI the export is from before adding,
   // so each paste is tagged and two exports stay distinct in Sources.
   const [provider, setProvider] = useState<AiSourceKey | null>(null);
+  // A separate draft per provider so switching the picker swaps to that
+  // provider's own box: a Claude excerpt never carries over into the ChatGPT
+  // paste, and vice versa. Keyed off AI_PASTE_SOURCES so it can't drift.
+  const [drafts, setDrafts] = useState<Record<AiSourceKey, string>>(
+    () =>
+      Object.fromEntries(AI_PASTE_SOURCES.map((s) => [s.key, ""])) as Record<
+        AiSourceKey,
+        string
+      >,
+  );
+  const draft = provider ? drafts[provider] : "";
   const [copied, setCopied] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -114,11 +124,13 @@ export function OnboardingWizard({ initialCount }: Props) {
     }
     setError(null);
     setNote(null);
+    const picked = provider;
     startTransition(async () => {
-      const r = await wizardPasteImport({ rawExport: raw, provider });
+      const r = await wizardPasteImport({ rawExport: drafts[picked], provider: picked });
       if (r.ok) {
         setSubmitted(true);
-        setRaw("");
+        // Clear only this provider's box; other providers' drafts are untouched.
+        setDrafts((d) => ({ ...d, [picked]: "" }));
         // Clear the pick too, so adding a second export is a deliberate choice.
         setProvider(null);
         setNote("Reading it in the background. Keep going, it'll be in your profile shortly.");
@@ -220,6 +232,7 @@ export function OnboardingWizard({ initialCount }: Props) {
             >
               {AI_PASTE_SOURCES.map((s, i) => {
                 const sel = provider === s.key;
+                const hasDraft = drafts[s.key].trim().length > 0;
                 return (
                   <button
                     key={s.key}
@@ -237,23 +250,43 @@ export function OnboardingWizard({ initialCount }: Props) {
                   >
                     <BrandIcon brand={s.key} size={15} fallback={s.label[0]} />
                     <span>{s.label}</span>
+                    {/* Dot marks a box that already holds unsaved text, so a
+                        started-but-not-added draft on another provider is visible. */}
+                    {hasDraft && !sel && (
+                      <span
+                        aria-label="has an unsaved draft"
+                        className="h-1.5 w-1.5 rounded-full bg-[var(--amber)]"
+                      />
+                    )}
                   </button>
                 );
               })}
             </div>
 
-            <p className="mt-4 text-sm text-[var(--t-dim)]">Then paste the result below.</p>
+            <p className="mt-4 text-sm text-[var(--t-dim)]">
+              {provider
+                ? `Then paste your ${aiSourceLabel(provider)} result below.`
+                : "Pick which AI above, then paste its result below."}
+            </p>
             <textarea
-              value={raw}
-              onChange={(e) => setRaw(e.target.value)}
+              value={draft}
+              onChange={(e) => {
+                if (!provider) return;
+                setDrafts((d) => ({ ...d, [provider]: e.target.value }));
+              }}
+              disabled={!provider}
               rows={9}
-              placeholder="Paste the export here…"
-              className="mt-4 w-full resize-y rounded-lg border border-[var(--line)] bg-black/20 p-4 font-mono text-sm text-[var(--text)] placeholder:text-[var(--t-faint)] focus:outline-none"
+              placeholder={
+                provider
+                  ? `Paste your ${aiSourceLabel(provider)} export here…`
+                  : "Pick which AI above first…"
+              }
+              className="mt-4 w-full resize-y rounded-lg border border-[var(--line)] bg-black/20 p-4 font-mono text-sm text-[var(--text)] placeholder:text-[var(--t-faint)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             />
             <button
               type="button"
               onClick={importPaste}
-              disabled={pending || raw.trim().length === 0 || !provider}
+              disabled={pending || draft.trim().length === 0 || !provider}
               className={`${primary} mt-3`}
             >
               {pending ? "Reading…" : "Add to my profile"}
