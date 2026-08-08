@@ -60,3 +60,10 @@ Stop and wait for a choice before building anything further.
 - One PR per logical change — don't mix chores into feature branches.
 - Delete the branch after merge.
 <!-- END STANDARD -->
+# Working style (personal)
+
+Shape every response for a reader with ADHD — lead with the concrete next
+action; number multi-step work; externalize what's done vs left; suppress
+tangents; give specific time estimates ("~5 min"); make progress visible.
+For design/UI work, present exactly three options (A, B, C) with one-line
+rationales and wait for a choice before building.
